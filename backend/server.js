@@ -425,6 +425,163 @@ app.get('/api/difficulty-levels', authenticate, (req, res) => {
     res.json(levels);
 });
 
+// Spelling Challenge - Get questions for a new game
+app.get('/api/spelling-challenge/questions', authenticate, (req, res) => {
+    const count = parseInt(req.query.count) || 10;
+
+    db.get("SELECT vocab_size FROM users WHERE id = ?", [req.user.id], (err, user) => {
+        if (!user) return res.status(404).json({ error: "用户未找到" });
+
+        const vocabSize = user.vocab_size || 3000;
+
+        // Determine difficulty range based on user's vocab size
+        // Select words around user's level (±20% range) to keep it challenging but not too hard
+        const minRank = Math.max(100, Math.floor(vocabSize * 0.6));
+        const maxRank = Math.min(10000, Math.ceil(vocabSize * 1.4));
+
+        const sql = `
+            SELECT w.*
+            FROM words w
+            WHERE w.rank BETWEEN ? AND ?
+            AND w.id NOT IN (
+                SELECT word_id FROM spelling_challenge_history
+                WHERE user_id = ? AND created_at > datetime('now', '-24 hours')
+            )
+            ORDER BY ABS(w.rank - ?) ASC, RANDOM()
+            LIMIT ?
+        `;
+
+        db.all(sql, [minRank, maxRank, req.user.id, vocabSize, count], (err, words) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            // If not enough words in range, fallback to any words
+            if (words.length < count) {
+                const fallbackSql = `
+                    SELECT w.*
+                    FROM words w
+                    WHERE w.id NOT IN (
+                        SELECT word_id FROM spelling_challenge_history
+                        WHERE user_id = ? AND created_at > datetime('now', '-24 hours')
+                    )
+                    ORDER BY RANDOM()
+                    LIMIT ?
+                `;
+                db.all(fallbackSql, [req.user.id, count], (err, fallbackWords) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    const sessionId = `spelling_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    res.json({
+                        sessionId,
+                        words: fallbackWords.map(w => ({
+                            id: w.id,
+                            word: w.word,
+                            pronunciation: w.pronunciation,
+                            definition: w.definition,
+                            pos: w.pos,
+                            rank: w.rank,
+                            difficulty_level: w.difficulty_level
+                        }))
+                    });
+                });
+                return;
+            }
+
+            const sessionId = `spelling_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            res.json({
+                sessionId,
+                words: words.map(w => ({
+                    id: w.id,
+                    word: w.word,
+                    pronunciation: w.pronunciation,
+                    definition: w.definition,
+                    pos: w.pos,
+                    rank: w.rank,
+                    difficulty_level: w.difficulty_level
+                }))
+            });
+        });
+    });
+});
+
+// Spelling Challenge - Submit answer for a single question
+app.post('/api/spelling-challenge/answer', authenticate, (req, res) => {
+    const { sessionId, wordId, userAnswer, isCorrect, timeSpent } = req.body;
+
+    if (!sessionId || !wordId) {
+        return res.status(400).json({ error: "缺少必要参数" });
+    }
+
+    const correct = isCorrect ? 1 : 0;
+    const time = timeSpent || 0;
+
+    db.run(
+        "INSERT INTO spelling_challenge_history (user_id, session_id, word_id, user_answer, is_correct, time_spent) VALUES (?, ?, ?, ?, ?, ?)",
+        [req.user.id, sessionId, wordId, userAnswer || '', correct, time],
+        (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        }
+    );
+});
+
+// Spelling Challenge - Submit complete game result
+app.post('/api/spelling-challenge/complete', authenticate, (req, res) => {
+    const { sessionId, totalQuestions, correctCount, totalTime, answers } = req.body;
+
+    if (!sessionId || totalQuestions === undefined || correctCount === undefined) {
+        return res.status(400).json({ error: "缺少必要参数" });
+    }
+
+    const score = Math.round((correctCount / totalQuestions) * 1000);
+
+    // Insert session summary
+    db.run(
+        "INSERT INTO spelling_challenge_sessions (user_id, session_id, total_questions, correct_count, total_time, score) VALUES (?, ?, ?, ?, ?, ?)",
+        [req.user.id, sessionId, totalQuestions, correctCount, totalTime || 0, score],
+        function (err) {
+            if (err) {
+                // If UNIQUE constraint failed, update existing record
+                if (err.message.includes('UNIQUE')) {
+                    db.run(
+                        "UPDATE spelling_challenge_sessions SET total_questions = ?, correct_count = ?, total_time = ?, score = ? WHERE session_id = ? AND user_id = ?",
+                        [totalQuestions, correctCount, totalTime || 0, score, sessionId, req.user.id],
+                        (updateErr) => {
+                            if (updateErr) return res.status(500).json({ error: updateErr.message });
+                            res.json({ success: true, sessionId, score, correctCount, totalQuestions });
+                        }
+                    );
+                    return;
+                }
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ success: true, sessionId, score, correctCount, totalQuestions });
+        }
+    );
+});
+
+// Spelling Challenge - Get user's challenge history
+app.get('/api/spelling-challenge/history', authenticate, (req, res) => {
+    const limit = parseInt(req.query.limit) || 10;
+
+    const sql = `
+        SELECT scs.*,
+               (SELECT COUNT(*) FROM spelling_challenge_sessions WHERE user_id = ?) as total_games,
+               (SELECT AVG(score) FROM spelling_challenge_sessions WHERE user_id = ?) as avg_score
+        FROM spelling_challenge_sessions scs
+        WHERE scs.user_id = ?
+        ORDER BY scs.created_at DESC
+        LIMIT ?
+    `;
+
+    db.all(sql, [req.user.id, req.user.id, req.user.id, limit], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({
+            history: rows,
+            totalGames: rows[0]?.total_games || 0,
+            avgScore: rows[0]?.avg_score ? Math.round(rows[0].avg_score) : 0
+        });
+    });
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

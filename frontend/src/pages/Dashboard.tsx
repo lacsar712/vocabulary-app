@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Library } from 'lucide-react';
+import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -222,6 +222,14 @@ const Dashboard: React.FC = () => {
                             >
                                 <span className="w-2 h-2 rounded-full bg-amber-400"></span>
                                 重测词汇量
+                            </button>
+                            <button
+                                onClick={() => navigate('/spelling-challenge')}
+                                className="w-full text-left p-3 rounded-lg bg-gradient-to-r from-primary/20 to-secondary/20 hover:from-primary/30 hover:to-secondary/30 transition text-slate-300 hover:text-white flex items-center gap-3 border border-primary/30"
+                            >
+                                <span className="w-2 h-2 rounded-full bg-pink-400"></span>
+                                <Gamepad2 size={16} className="text-accent" />
+                                听音拼写挑战
                             </button>
                         </div>
                     </div>

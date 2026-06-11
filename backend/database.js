@@ -153,6 +153,33 @@ db.serialize(() => {
         UNIQUE(user_id, word_id)
     )`);
 
+    // Spelling Challenge History - 拼写挑战历史记录
+    db.run(`CREATE TABLE IF NOT EXISTS spelling_challenge_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        session_id TEXT,
+        word_id INTEGER,
+        user_answer TEXT,
+        is_correct INTEGER,
+        time_spent INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(word_id) REFERENCES words(id)
+    )`);
+
+    // Spelling Challenge Sessions - 拼写挑战会话汇总
+    db.run(`CREATE TABLE IF NOT EXISTS spelling_challenge_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        session_id TEXT UNIQUE,
+        total_questions INTEGER,
+        correct_count INTEGER,
+        total_time INTEGER,
+        score INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )`);
+
     // Seed Data with UPSERT - delay to ensure migration completes
     setTimeout(() => {
         const stmt = db.prepare(`

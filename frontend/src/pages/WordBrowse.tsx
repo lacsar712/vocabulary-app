@@ -30,15 +30,6 @@ interface Pagination {
     totalPages: number;
 }
 
-const difficultyColors: Record<number, string> = {
-    1: 'from-emerald-500 to-teal-500',
-    2: 'from-green-500 to-emerald-500',
-    3: 'from-blue-500 to-cyan-500',
-    4: 'from-purple-500 to-indigo-500',
-    5: 'from-orange-500 to-amber-500',
-    6: 'from-red-500 to-rose-500',
-};
-
 const difficultyBgColors: Record<number, string> = {
     1: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300',
     2: 'bg-green-500/10 border-green-500/30 text-green-300',
