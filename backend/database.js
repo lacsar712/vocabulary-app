@@ -289,6 +289,21 @@ db.serialize(() => {
         UNIQUE(user_id, theme_id)
     )`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        detail TEXT,
+        is_read INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )`);
+
+    db.run(`CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_notifications_user_type ON notifications(user_id, type)`);
+
     setTimeout(() => {
         const stmt = db.prepare(`
             INSERT INTO words (word, pronunciation, pos, definition, example, rank, frequency, difficulty_level)
@@ -339,4 +354,14 @@ db.serialize(() => {
     }, 500);
 });
 
-module.exports = { db, THEMES };
+const createNotification = (userId, type, title, summary, detail) => {
+    db.run(
+        "INSERT INTO notifications (user_id, type, title, summary, detail) VALUES (?, ?, ?, ?, ?)",
+        [userId, type, title, summary, detail || null],
+        (err) => {
+            if (err) console.error('Error creating notification:', err);
+        }
+    );
+};
+
+module.exports = { db, THEMES, createNotification };

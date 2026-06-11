@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { db, THEMES } = require('./database');
+const { db, THEMES, createNotification } = require('./database');
 const app = express();
 const PORT = 3000;
 const SECRET_KEY = "supersecretkey_vocabulary_1209"; // In prod, use .env
@@ -162,13 +162,30 @@ app.post('/api/test/submit', authenticate, (req, res) => {
     stmt.finalize();
 
     // Update user vocab size
-    db.run("UPDATE users SET vocab_size = ? WHERE id = ?", [estimatedVocab, req.user.id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({
-            vocab_size: estimatedVocab,
-            correct_count: correctAnswers.length,
-            total_questions: answers.length,
-            accuracy: Math.round((correctAnswers.length / answers.length) * 100)
+    db.get("SELECT vocab_size FROM users WHERE id = ?", [req.user.id], (e3, oldUser) => {
+        const oldVocab = oldUser ? oldUser.vocab_size : 0;
+        db.run("UPDATE users SET vocab_size = ? WHERE id = ?", [estimatedVocab, req.user.id], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            const diff = estimatedVocab - oldVocab;
+            if (diff !== 0) {
+                const direction = diff > 0 ? '上升' : '下降';
+                const absDiff = Math.abs(diff);
+                createNotification(
+                    req.user.id,
+                    'rank_change',
+                    '词汇量变动通知',
+                    `你的词汇量评估${direction}了 ${absDiff} 词，当前为 ${estimatedVocab} 词`,
+                    `经过词汇量测试，你的词汇量从 ${oldVocab} 词${direction}至 ${estimatedVocab} 词。${diff > 0 ? '继续保持进步！' : '不要灰心，坚持学习就会提升！'}`
+                );
+            }
+
+            res.json({
+                vocab_size: estimatedVocab,
+                correct_count: correctAnswers.length,
+                total_questions: answers.length,
+                accuracy: Math.round((correctAnswers.length / answers.length) * 100)
+            });
         });
     });
 });
@@ -326,9 +343,28 @@ app.get('/api/recommend/batch', authenticate, (req, res) => {
 
 // Mark word as learned
 app.post('/api/learn/record', authenticate, (req, res) => {
-    const { word_id, status } = req.body; // status: 'learned'
+    const { word_id, status } = req.body;
     db.run("INSERT INTO learning_history (user_id, word_id, status) VALUES (?, ?, ?)", [req.user.id, word_id, status || 'learned'], (err) => {
         if (err) return res.status(500).json({ error: err.message });
+
+        if (status === 'learned') {
+            db.get("SELECT word FROM words WHERE id = ?", [word_id], (e2, w) => {
+                if (w) {
+                    createNotification(req.user.id, 'review_reminder', '新单词已掌握', `你已掌握单词 "${w.word}"，记得及时复习哦！`, `单词 "${w.word}" 已加入你的已掌握列表，建议在24小时内进行复习以巩固记忆。`);
+                }
+            });
+
+            db.get("SELECT COUNT(*) as cnt FROM learning_history WHERE user_id = ? AND status = 'learned'", [req.user.id], (e2, row) => {
+                if (row) {
+                    const cnt = row.cnt;
+                    const milestones = [10, 50, 100, 200, 500, 1000];
+                    if (milestones.includes(cnt)) {
+                        createNotification(req.user.id, 'goal_achievement', '学习目标达成！', `恭喜！你已累计掌握 ${cnt} 个单词！`, `你的词汇学习取得了重大进展，已累计掌握 ${cnt} 个单词。继续加油！`);
+                    }
+                }
+            });
+        }
+
         res.json({ success: true });
     });
 });
@@ -576,8 +612,14 @@ app.post('/api/spelling-challenge/complete', authenticate, (req, res) => {
     }
 
     const score = Math.round((correctCount / totalQuestions) * 1000);
+    const accuracy = Math.round((correctCount / totalQuestions) * 100);
 
-    // Insert session summary
+    if (accuracy === 100) {
+        createNotification(req.user.id, 'achievement_unlock', '拼写挑战满分！', `恭喜！你在拼写挑战中获得了满分 ${score} 分！`, `你在本次拼写挑战中全部拼写正确，获得了 ${score} 分的满分成绩！`);
+    } else if (accuracy >= 80) {
+        createNotification(req.user.id, 'achievement_unlock', '拼写挑战优秀！', `你在拼写挑战中获得了 ${score} 分，正确率 ${accuracy}%`, `本次拼写挑战你答对了 ${correctCount}/${totalQuestions} 题，得分 ${score} 分，正确率 ${accuracy}%。`);
+    }
+
     db.run(
         "INSERT INTO spelling_challenge_sessions (user_id, session_id, total_questions, correct_count, total_time, score) VALUES (?, ?, ?, ?, ?, ?)",
         [req.user.id, sessionId, totalQuestions, correctCount, totalTime || 0, score],
@@ -817,6 +859,117 @@ app.get('/api/leaderboard', authenticate, (req, res) => {
             res.json({ period, leaderboard, currentUser });
         });
     });
+});
+
+
+app.get('/api/notifications', authenticate, (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    const type = req.query.type || null;
+    const offset = (page - 1) * pageSize;
+
+    let countSql = 'SELECT COUNT(*) as total FROM notifications WHERE user_id = ?';
+    let dataSql = 'SELECT * FROM notifications WHERE user_id = ?';
+    let countParams = [req.user.id];
+    let dataParams = [req.user.id];
+
+    if (type) {
+        countSql += ' AND type = ?';
+        dataSql += ' AND type = ?';
+        countParams.push(type);
+        dataParams.push(type);
+    }
+
+    dataSql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    dataParams.push(pageSize, offset);
+
+    db.get(countSql, countParams, (err, countResult) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const total = countResult.total;
+
+        db.all(dataSql, dataParams, (err2, rows) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({
+                notifications: rows,
+                pagination: {
+                    page,
+                    pageSize,
+                    total,
+                    totalPages: Math.ceil(total / pageSize)
+                }
+            });
+        });
+    });
+});
+
+app.get('/api/notifications/unread-count', authenticate, (req, res) => {
+    db.get(
+        "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0",
+        [req.user.id],
+        (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ count: row.count });
+        }
+    );
+});
+
+app.put('/api/notifications/:id/read', authenticate, (req, res) => {
+    db.run(
+        "UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?",
+        [req.params.id, req.user.id],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, updated: this.changes > 0 });
+        }
+    );
+});
+
+app.put('/api/notifications/read-all', authenticate, (req, res) => {
+    db.run(
+        "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0",
+        [req.user.id],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, updated: this.changes });
+        }
+    );
+});
+
+app.put('/api/notifications/read-type/:type', authenticate, (req, res) => {
+    db.run(
+        "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND type = ? AND is_read = 0",
+        [req.user.id, req.params.type],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, updated: this.changes });
+        }
+    );
+});
+
+app.delete('/api/notifications/:id', authenticate, (req, res) => {
+    db.run(
+        "DELETE FROM notifications WHERE id = ? AND user_id = ?",
+        [req.params.id, req.user.id],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, deleted: this.changes > 0 });
+        }
+    );
+});
+
+app.post('/api/notifications', authenticate, (req, res) => {
+    const { type, title, summary, detail } = req.body;
+    if (!type || !title || !summary) {
+        return res.status(400).json({ error: '缺少必要参数' });
+    }
+    db.run(
+        "INSERT INTO notifications (user_id, type, title, summary, detail) VALUES (?, ?, ?, ?, ?)",
+        [req.user.id, type, title, summary, detail || null],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, id: this.lastID });
+        }
+    );
 });
 
 

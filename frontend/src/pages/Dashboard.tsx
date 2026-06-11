@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import api from '../api';
-import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy, Bookmark } from 'lucide-react';
+import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy, Bookmark, Bell } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -36,6 +37,7 @@ const getThemeStyle = (key: string) => themeColorMap[key] || themeColorMap.daily
 
 const Dashboard: React.FC = () => {
     const { user, logout } = useAuth();
+    const { unreadCount } = useNotifications();
     const [word, setWord] = useState<RecommendedWord | null>(null);
     const [stats, setStats] = useState<any>([]);
     const [loading, setLoading] = useState(true);
@@ -119,6 +121,14 @@ const Dashboard: React.FC = () => {
                     <p className="text-slate-400">当前词汇量: <span className="text-white font-bold">{user?.vocab_size}</span> 词</p>
                 </div>
                 <div className="flex items-center gap-4">
+                    <button onClick={() => navigate('/notifications')} title="消息中心" className="relative p-2 rounded-full bg-slate-800 border border-slate-700 hover:bg-slate-700 transition cursor-pointer">
+                        <Bell size={20} className="text-primary" />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center px-1 rounded-full bg-red-500 text-white text-xs font-bold leading-none">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
+                    </button>
                     <button onClick={refreshData} title="刷新数据" className="p-2 rounded-full bg-slate-800 border border-slate-700 hover:bg-slate-700 transition cursor-pointer">
                         <RefreshCw size={20} className="text-primary" />
                     </button>
