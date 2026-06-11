@@ -583,6 +583,57 @@ app.get('/api/spelling-challenge/history', authenticate, (req, res) => {
 });
 
 
+app.get('/api/leaderboard', authenticate, (req, res) => {
+    const period = req.query.period === 'month' ? 'month' : 'week';
+
+    const timeCondition = period === 'month'
+        ? "lh.updated_at >= datetime('now', '-1 month')"
+        : "lh.updated_at >= datetime('now', '-7 days')";
+
+    const leaderboardSql = `
+        SELECT u.id, u.username, u.vocab_size,
+               COUNT(lh.id) as mastered_count,
+               RANK() OVER (ORDER BY COUNT(lh.id) DESC) as rank
+        FROM users u
+        LEFT JOIN learning_history lh ON lh.user_id = u.id AND lh.status = 'learned' AND ${timeCondition}
+        GROUP BY u.id
+        ORDER BY mastered_count DESC, u.vocab_size DESC
+        LIMIT 20
+    `;
+
+    db.all(leaderboardSql, (err, leaderboard) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const inTop20 = leaderboard.some(row => row.id === req.user.id);
+
+        if (inTop20) {
+            return res.json({ period, leaderboard, currentUser: null });
+        }
+
+        const currentUserSql = `
+            SELECT u.id, u.username, u.vocab_size,
+                   COUNT(lh.id) as mastered_count,
+                   (SELECT COUNT(*) + 1 FROM (
+                       SELECT COUNT(lh2.id) as cnt
+                       FROM users u2
+                       LEFT JOIN learning_history lh2 ON lh2.user_id = u2.id AND lh2.status = 'learned' AND ${timeCondition}
+                       GROUP BY u2.id
+                       HAVING cnt > 0
+                   ) sub) as rank
+            FROM users u
+            LEFT JOIN learning_history lh ON lh.user_id = u.id AND lh.status = 'learned' AND ${timeCondition}
+            WHERE u.id = ?
+            GROUP BY u.id
+        `;
+
+        db.get(currentUserSql, [req.user.id], (err2, currentUser) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ period, leaderboard, currentUser });
+        });
+    });
+});
+
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

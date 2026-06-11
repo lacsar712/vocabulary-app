@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2 } from 'lucide-react';
+import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -230,6 +230,13 @@ const Dashboard: React.FC = () => {
                                 <span className="w-2 h-2 rounded-full bg-pink-400"></span>
                                 <Gamepad2 size={16} className="text-accent" />
                                 听音拼写挑战
+                            </button>
+                            <button
+                                onClick={() => navigate('/leaderboard')}
+                                className="w-full text-left p-3 rounded-lg bg-gradient-to-r from-yellow-500/10 to-amber-500/10 hover:from-yellow-500/20 hover:to-amber-500/20 transition text-slate-300 hover:text-white flex items-center gap-3 border border-yellow-500/30"
+                            >
+                                <Trophy size={16} className="text-yellow-400" />
+                                学习排行榜
                             </button>
                         </div>
                     </div>

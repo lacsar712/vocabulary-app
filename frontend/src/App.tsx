@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import VocabularyTest from './pages/VocabularyTest';
 import WordBrowse from './pages/WordBrowse';
 import SpellingChallenge from './pages/SpellingChallenge';
+import Leaderboard from './pages/Leaderboard';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { isAuthenticated } = useAuth();
@@ -33,6 +34,11 @@ function App() {
             <Route path="/spelling-challenge" element={
               <ProtectedRoute>
                 <SpellingChallenge />
+              </ProtectedRoute>
+            } />
+            <Route path="/leaderboard" element={
+              <ProtectedRoute>
+                <Leaderboard />
               </ProtectedRoute>
             } />
             <Route path="/" element={
