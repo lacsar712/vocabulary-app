@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy } from 'lucide-react';
+import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy, Bookmark } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -16,15 +16,32 @@ interface RecommendedWord {
     rank?: number;
     frequency?: number;
     difficulty_level?: number;
+    theme_names?: string[];
+    theme_keys?: string[];
+    in_study_plan?: boolean;
 }
+
+const themeColorMap: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+    business: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-300', badge: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
+    travel: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-300', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+    academic: { bg: 'bg-violet-500/10', border: 'border-violet-500/30', text: 'text-violet-300', badge: 'bg-violet-500/20 text-violet-300 border-violet-500/30' },
+    tech: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', text: 'text-cyan-300', badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
+    daily: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-300', badge: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+    medical: { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-300', badge: 'bg-red-500/20 text-red-300 border-red-500/30' },
+    law: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-300', badge: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
+    sports: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-300', badge: 'bg-green-500/20 text-green-300 border-green-500/30' },
+};
+
+const getThemeStyle = (key: string) => themeColorMap[key] || themeColorMap.daily;
 
 const Dashboard: React.FC = () => {
     const { user, logout } = useAuth();
     const [word, setWord] = useState<RecommendedWord | null>(null);
     const [stats, setStats] = useState<any>([]);
     const [loading, setLoading] = useState(true);
-    const [showReview, setShowReview] = useState(false); // Added showReview state
-    const navigate = useNavigate(); // Initialized useNavigate
+    const [showReview, setShowReview] = useState(false);
+    const [themePrefs, setThemePrefs] = useState<{id: number; key: string; name: string; icon: string; color: string}[]>([]);
+    const navigate = useNavigate();
 
     const fetchRecommendation = async () => {
         try {
@@ -38,12 +55,18 @@ const Dashboard: React.FC = () => {
     const fetchStats = async () => {
         try {
             const res = await api.get('/stats');
-            // Store full history for review
             const history = res.data.history;
             setStats({
                 chartData: history.map((_: any, i: number) => ({ name: `Day ${i + 1}`, words: i + 1 })),
                 history: history
             });
+        } catch (e) { console.error(e); }
+    };
+
+    const fetchThemePrefs = async () => {
+        try {
+            const res = await api.get('/themes/preferences');
+            setThemePrefs(res.data);
         } catch (e) { console.error(e); }
     };
 
@@ -54,7 +77,7 @@ const Dashboard: React.FC = () => {
 
     const refreshData = () => {
         setLoading(true);
-        Promise.all([fetchRecommendation(), fetchStats()]).then(() => setLoading(false));
+        Promise.all([fetchRecommendation(), fetchStats(), fetchThemePrefs()]).then(() => setLoading(false));
     };
 
     useEffect(() => {
@@ -134,6 +157,22 @@ const Dashboard: React.FC = () => {
                                 )}
                             </div>
 
+                            {word.theme_keys && word.theme_keys.length > 0 && (
+                                <div className="absolute top-4 left-4 flex flex-wrap gap-1.5 max-w-[60%]">
+                                    {word.theme_keys.map((key, idx) => {
+                                        const s = getThemeStyle(key);
+                                        return (
+                                            <span
+                                                key={key}
+                                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${s.badge}`}
+                                            >
+                                                {word.theme_names?.[idx]}
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
                             <div className="mb-8">
                                 <div className="flex items-baseline gap-4 mb-2">
                                     <h2 className="text-6xl font-bold text-white tracking-tight">{word.word}</h2>
@@ -202,6 +241,20 @@ const Dashboard: React.FC = () => {
                     <div className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-indigo-900/20 to-purple-900/20">
                         <h3 className="text-lg font-bold text-white mb-4">快捷操作</h3>
                         <div className="space-y-3">
+                            <button
+                                onClick={() => navigate('/themes')}
+                                className="w-full text-left p-3 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 transition text-slate-300 hover:text-white flex items-center gap-3 border border-cyan-500/30"
+                            >
+                                <Bookmark size={16} className="text-cyan-400" />
+                                <span className="flex-1">主题学习</span>
+                                {themePrefs.length > 0 && (
+                                    <span className="flex items-center gap-1 text-xs">
+                                        {themePrefs.map(t => (
+                                            <span key={t.id}>{t.icon}</span>
+                                        ))}
+                                    </span>
+                                )}
+                            </button>
                             <button
                                 onClick={() => navigate('/browse')}
                                 className="w-full text-left p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white flex items-center gap-3"

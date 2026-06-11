@@ -72,8 +72,97 @@ const wordList = [
 ];
 
 
+const THEMES = [
+    { id: 1, key: 'business', name: '商务', icon: '💼', color: '#3b82f6' },
+    { id: 2, key: 'travel', name: '旅游', icon: '✈️', color: '#10b981' },
+    { id: 3, key: 'academic', name: '学术', icon: '🎓', color: '#8b5cf6' },
+    { id: 4, key: 'tech', name: '科技', icon: '💻', color: '#06b6d4' },
+    { id: 5, key: 'daily', name: '日常口语', icon: '💬', color: '#f59e0b' },
+    { id: 6, key: 'medical', name: '医疗健康', icon: '🏥', color: '#ef4444' },
+    { id: 7, key: 'law', name: '法律财经', icon: '⚖️', color: '#a855f7' },
+    { id: 8, key: 'sports', name: '体育运动', icon: '⚽', color: '#22c55e' }
+];
+
+const wordThemeMap = {
+    'business': [
+        'ability', 'accept', 'achieve', 'advice', 'absolute', 'absence', 'abandon',
+        'achieve', 'advice', 'absolute', 'academic', 'accept', 'ability',
+        'ambiguous', 'benevolent', 'diligent', 'eloquent', 'fabricate',
+        'magnanimous', 'nefarious', 'quintessential', 'sagacious', 'ubiquitous',
+        'vacillate', 'yearn', 'zealous'
+    ],
+    'travel': [
+        'abandon', 'absence', 'accept', 'achievement', 'adventure',
+        'yearn', 'ubiquitous', 'vacillate', 'wane', 'zealous'
+    ],
+    'academic': [
+        'academic', 'ability', 'ambiguous', 'eloquent', 'diligent', 'absolute', 'absence',
+        'academic', 'accept', 'achieve', 'advice', 'ambiguous',
+        'benevolent', 'debilitate', 'diligent', 'eclectic', 'eloquent',
+        'fabricate', 'harangue', 'iconoclast', 'juxtapose', 'kaleidoscope',
+        'languid', 'magnanimous', 'obfuscate', 'palimpsest', 'quintessential',
+        'rambunctious', 'sagacious', 'sesquipedalian', 'taciturn', 'ubiquitous',
+        'vacillate', 'wane', 'xenophobia', 'yearn', 'zealous'
+    ],
+    'tech': [
+        'ubiquitous', 'fabricate', 'obfuscate', 'eclectic',
+        'ability', 'accept', 'achieve', 'ambiguous', 'debilitate',
+        'iconoclast', 'juxtapose', 'kaleidoscope', 'obfuscate',
+        'palimpsest', 'quintessential', 'sesquipedalian', 'vacillate'
+    ],
+    'daily': [
+        'apple', 'book', 'cat', 'dog', 'eat', 'water', 'house', 'time', 'accept', 'advice', 'ability',
+        'absolute', 'absence', 'abandon', 'accept', 'achieve', 'advice',
+        'apartment', 'breakfast', 'buy', 'cook', 'dinner', 'drink',
+        'family', 'friend', 'go', 'happy', 'home', 'house',
+        'job', 'kitchen', 'learn', 'lunch', 'money', 'morning',
+        'night', 'office', 'read', 'restaurant', 'school', 'shop',
+        'sleep', 'speak', 'study', 'talk', 'teach', 'telephone',
+        'travel', 'walk', 'wash', 'watch', 'work', 'write'
+    ],
+    'medical': [
+        'debilitate', 'languid', 'yearn',
+        'absence', 'accept', 'ache', 'advice', 'ambulance', 'appointment',
+        'bed', 'blood', 'body', 'care', 'clinic', 'cold',
+        'cough', 'dentist', 'doctor', 'drug', 'emergency', 'exercise',
+        'eye', 'fever', 'flu', 'food', 'habit', 'hand',
+        'headache', 'health', 'heart', 'hospital', 'illness', 'injection',
+        'medicine', 'nurse', 'operation', 'pain', 'patient', 'pill',
+        'prescription', 'sick', 'surgery', 'symptom', 'temperature', 'toothache',
+        'treatment', 'vaccine', 'virus', 'vitamin', 'water', 'xray'
+    ],
+    'law': [
+        'nefarious', 'garrulous', 'harangue', 'defenestration', 'abandon', 'absolute',
+        'absence', 'accept', 'accuse', 'action', 'agreement', 'appeal',
+        'arrest', 'attorney', 'ban', 'benefit', 'breach', 'case',
+        'charge', 'citizen', 'claim', 'client', 'court', 'crime',
+        'criminal', 'damage', 'defendant', 'defense', 'dispute', 'document',
+        'evidence', 'fine', 'fraud', 'guilty', 'harassment', 'illegal',
+        'judge', 'judgment', 'jury', 'justice', 'lawyer', 'legal',
+        'liability', 'license', 'litigation', 'negligence', 'notary', 'oath',
+        'obligation', 'offense', 'parole', 'party', 'penalty', 'petition',
+        'plaintiff', 'plead', 'policy', 'precedent', 'prosecute', 'regulation',
+        'ruling', 'settlement', 'statute', 'subpoena', 'sue', 'summons',
+        'testimony', 'tort', 'trial', 'verdict', 'violation', 'warrant',
+        'witness', 'writ'
+    ],
+    'sports': [
+        'rambunctious', 'diligent', 'zealous',
+        'ability', 'achieve', 'active', 'athlete', 'ball', 'basketball',
+        'bike', 'boat', 'bowling', 'boxing', 'champion', 'cheer',
+        'coach', 'compete', 'competition', 'court', 'defense', 'effort',
+        'endurance', 'equipment', 'exercise', 'fan', 'field', 'final',
+        'football', 'game', 'goal', 'golf', 'gym', 'hockey',
+        'injure', 'judge', 'league', 'loss', 'marathon', 'match',
+        'medal', 'offense', 'olympics', 'opponent', 'outdoor', 'play',
+        'player', 'point', 'prize', 'race', 'referee', 'score',
+        'season', 'soccer', 'stadium', 'strength', 'swim', 'team',
+        'tennis', 'tournament', 'training', 'trophy', 'victory', 'volleyball',
+        'warmup', 'win', 'workout', 'worldcup'
+    ]
+};
+
 db.serialize(() => {
-    // Users table
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE,
@@ -82,7 +171,6 @@ db.serialize(() => {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Words table - create if not exists
     db.run(`CREATE TABLE IF NOT EXISTS words (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         word TEXT UNIQUE,
@@ -95,7 +183,6 @@ db.serialize(() => {
         difficulty_level INTEGER DEFAULT 3
     )`);
 
-    // Migration: Add new columns if they don't exist
     db.all("PRAGMA table_info(words)", (err, columns) => {
         if (err) {
             console.error('Error checking table info:', err);
@@ -119,7 +206,6 @@ db.serialize(() => {
         }
     });
 
-    // Test history table for adaptive testing
     db.run(`CREATE TABLE IF NOT EXISTS test_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -131,18 +217,16 @@ db.serialize(() => {
         FOREIGN KEY(word_id) REFERENCES words(id)
     )`);
 
-    // Learning History
     db.run(`CREATE TABLE IF NOT EXISTS learning_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
         word_id INTEGER,
-        status TEXT, -- 'learned', 'mastered', 'skipped'
+        status TEXT,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id),
         FOREIGN KEY(word_id) REFERENCES words(id)
     )`);
 
-    // Study Plan - 用户收藏的单词，用于优先推荐
     db.run(`CREATE TABLE IF NOT EXISTS study_plan (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -153,7 +237,6 @@ db.serialize(() => {
         UNIQUE(user_id, word_id)
     )`);
 
-    // Spelling Challenge History - 拼写挑战历史记录
     db.run(`CREATE TABLE IF NOT EXISTS spelling_challenge_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -167,7 +250,6 @@ db.serialize(() => {
         FOREIGN KEY(word_id) REFERENCES words(id)
     )`);
 
-    // Spelling Challenge Sessions - 拼写挑战会话汇总
     db.run(`CREATE TABLE IF NOT EXISTS spelling_challenge_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -180,7 +262,33 @@ db.serialize(() => {
         FOREIGN KEY(user_id) REFERENCES users(id)
     )`);
 
-    // Seed Data with UPSERT - delay to ensure migration completes
+    db.run(`CREATE TABLE IF NOT EXISTS themes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key TEXT UNIQUE,
+        name TEXT,
+        icon TEXT,
+        color TEXT
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS word_themes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        word_id INTEGER,
+        theme_id INTEGER,
+        FOREIGN KEY(word_id) REFERENCES words(id),
+        FOREIGN KEY(theme_id) REFERENCES themes(id),
+        UNIQUE(word_id, theme_id)
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS user_theme_preferences (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        theme_id INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(theme_id) REFERENCES themes(id),
+        UNIQUE(user_id, theme_id)
+    )`);
+
     setTimeout(() => {
         const stmt = db.prepare(`
             INSERT INTO words (word, pronunciation, pos, definition, example, rank, frequency, difficulty_level)
@@ -197,7 +305,38 @@ db.serialize(() => {
         });
         stmt.finalize();
         console.log('Word data seeded successfully');
+
+        const themeStmt = db.prepare(`
+            INSERT INTO themes (id, key, name, icon, color)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET
+                name=excluded.name,
+                icon=excluded.icon,
+                color=excluded.color
+        `);
+
+        THEMES.forEach(t => {
+            themeStmt.run(t.id, t.key, t.name, t.icon, t.color);
+        });
+        themeStmt.finalize();
+        console.log('Theme data seeded successfully');
+
+        setTimeout(() => {
+            const wtStmt = db.prepare(`
+                INSERT OR IGNORE INTO word_themes (word_id, theme_id)
+                SELECT w.id, t.id FROM words w, themes t
+                WHERE w.word = ? AND t.key = ?
+            `);
+
+            Object.entries(wordThemeMap).forEach(([themeKey, words]) => {
+                words.forEach(word => {
+                    wtStmt.run(word, themeKey);
+                });
+            });
+            wtStmt.finalize();
+            console.log('Word-theme associations seeded successfully');
+        }, 300);
     }, 500);
 });
 
-module.exports = db;
+module.exports = { db, THEMES };

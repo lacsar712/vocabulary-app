@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('./database');
+const { db, THEMES } = require('./database');
 const app = express();
 const PORT = 3000;
 const SECRET_KEY = "supersecretkey_vocabulary_1209"; // In prod, use .env
@@ -180,65 +180,92 @@ app.get('/api/recommend', authenticate, (req, res) => {
 
         const i = user.vocab_size;
 
-        // Enhanced recommendation algorithm:
-        // 1. **Highest priority**: Words in user's study plan (not yet learned)
-        // 2. Find words slightly above user's level (i+1 principle)
-        // 3. Prioritize high-frequency words (more useful in daily life)
-        // 4. Consider words that were skipped before (give second chance after time)
-        // 5. Exclude recently learned and recently skipped words
-
-        const sql = `
-            SELECT w.*,
-                   CASE
-                       WHEN sp.id IS NOT NULL THEN 200                  -- Study plan words get highest priority
-                       WHEN w.rank BETWEEN ? AND ? THEN 100            -- Sweet spot: i to i+1500
-                       WHEN w.rank BETWEEN ? AND ? THEN 80             -- Slightly above: i+1500 to i+3000
-                       WHEN w.rank < ? THEN 60                         -- Below level (review)
-                       ELSE 40                                         -- Much higher
-                   END as level_score,
-                   (w.frequency * 10) as frequency_score,
-                   sp.id IS NOT NULL as in_study_plan
-            FROM words w
-            LEFT JOIN study_plan sp ON sp.word_id = w.id AND sp.user_id = ?
-            WHERE w.id NOT IN (
-                SELECT word_id FROM learning_history
-                WHERE user_id = ? AND status = 'learned'
-            )
-            AND w.id NOT IN (
-                SELECT word_id FROM learning_history
-                WHERE user_id = ? AND status = 'skipped'
-                AND updated_at > datetime('now', '-1 hour')
-            )
-            ORDER BY (level_score + frequency_score) DESC, w.rank ASC
-            LIMIT 1
-        `;
-
-        const params = [
-            i, i + 1500,           // Sweet spot range
-            i + 1500, i + 3000,   // Slightly above range
-            i,                     // Below level threshold
-            req.user.id,          // For study plan join
-            req.user.id,          // For learned exclusion
-            req.user.id           // For recent skip exclusion
-        ];
-
-        db.get(sql, params, (err, word) => {
+        db.all("SELECT theme_id FROM user_theme_preferences WHERE user_id = ?", [req.user.id], (err, prefRows) => {
             if (err) return res.status(500).json({ error: err.message });
-            if (!word) {
-                // Fallback: return any unlearned word not recently skipped
-                db.get(`
-                    SELECT * FROM words
-                    WHERE id NOT IN (SELECT word_id FROM learning_history WHERE user_id = ? AND status = 'learned')
-                    AND id NOT IN (SELECT word_id FROM learning_history WHERE user_id = ? AND status = 'skipped' AND updated_at > datetime('now', '-1 hour'))
-                    ORDER BY frequency DESC, rank ASC
-                    LIMIT 1
-                `, [req.user.id, req.user.id], (err, fallback) => {
-                    if (fallback) return res.json(fallback);
-                    return res.json({ message: "暂无新单词. 您已掌握所有词汇!" });
-                });
-                return;
-            }
-            res.json(word);
+
+            const themeIds = prefRows.map(r => r.theme_id);
+            const hasThemePref = themeIds.length > 0;
+
+            const themeJoin = hasThemePref
+                ? `LEFT JOIN word_themes wt_pref ON wt_pref.word_id = w.id AND wt_pref.theme_id IN (${themeIds.map(() => '?').join(',')})`
+                : '';
+            const themeScore = hasThemePref
+                ? `, CASE WHEN wt_pref.theme_id IS NOT NULL THEN 150 ELSE 0 END as theme_score`
+                : ', 0 as theme_score';
+            const themeParams = hasThemePref ? themeIds : [];
+
+            const sql = `
+                SELECT w.*,
+                       CASE
+                           WHEN sp.id IS NOT NULL THEN 200
+                           WHEN w.rank BETWEEN ? AND ? THEN 100
+                           WHEN w.rank BETWEEN ? AND ? THEN 80
+                           WHEN w.rank < ? THEN 60
+                           ELSE 40
+                       END as level_score,
+                       (w.frequency * 10) as frequency_score,
+                       sp.id IS NOT NULL as in_study_plan
+                       ${themeScore},
+                       GROUP_CONCAT(DISTINCT t_all.name) as theme_names,
+                       GROUP_CONCAT(DISTINCT t_all.key) as theme_keys
+                FROM words w
+                LEFT JOIN study_plan sp ON sp.word_id = w.id AND sp.user_id = ?
+                ${themeJoin}
+                LEFT JOIN word_themes wt_all ON wt_all.word_id = w.id
+                LEFT JOIN themes t_all ON t_all.id = wt_all.theme_id
+                WHERE w.id NOT IN (
+                    SELECT word_id FROM learning_history
+                    WHERE user_id = ? AND status = 'learned'
+                )
+                AND w.id NOT IN (
+                    SELECT word_id FROM learning_history
+                    WHERE user_id = ? AND status = 'skipped'
+                    AND updated_at > datetime('now', '-1 hour')
+                )
+                GROUP BY w.id
+                ORDER BY (level_score + frequency_score + theme_score) DESC, w.rank ASC
+                LIMIT 1
+            `;
+
+            const params = [
+                i, i + 1500,
+                i + 1500, i + 3000,
+                i,
+                req.user.id,
+                ...themeParams,
+                req.user.id,
+                req.user.id
+            ];
+
+            db.get(sql, params, (err, word) => {
+                if (err) return res.status(500).json({ error: err.message });
+                if (!word) {
+                    db.get(`
+                        SELECT w.*,
+                               GROUP_CONCAT(DISTINCT t.name) as theme_names,
+                               GROUP_CONCAT(DISTINCT t.key) as theme_keys
+                        FROM words w
+                        LEFT JOIN word_themes wt ON wt.word_id = w.id
+                        LEFT JOIN themes t ON t.id = wt.theme_id
+                        WHERE w.id NOT IN (SELECT word_id FROM learning_history WHERE user_id = ? AND status = 'learned')
+                        AND w.id NOT IN (SELECT word_id FROM learning_history WHERE user_id = ? AND status = 'skipped' AND updated_at > datetime('now', '-1 hour'))
+                        GROUP BY w.id
+                        ORDER BY w.frequency DESC, w.rank ASC
+                        LIMIT 1
+                    `, [req.user.id, req.user.id], (err, fallback) => {
+                        if (fallback) {
+                            fallback.theme_names = fallback.theme_names ? fallback.theme_names.split(',') : [];
+                            fallback.theme_keys = fallback.theme_keys ? fallback.theme_keys.split(',') : [];
+                            return res.json(fallback);
+                        }
+                        return res.json({ message: "暂无新单词. 您已掌握所有词汇!" });
+                    });
+                    return;
+                }
+                word.theme_names = word.theme_names ? word.theme_names.split(',') : [];
+                word.theme_keys = word.theme_keys ? word.theme_keys.split(',') : [];
+                res.json(word);
+            });
         });
     });
 });
@@ -252,30 +279,47 @@ app.get('/api/recommend/batch', authenticate, (req, res) => {
 
         const i = user.vocab_size;
 
-        const sql = `
-            SELECT w.*,
-                   CASE
-                       WHEN sp.id IS NOT NULL THEN 200
-                       WHEN w.rank BETWEEN ? AND ? THEN 100
-                       WHEN w.rank BETWEEN ? AND ? THEN 80
-                       WHEN w.rank < ? THEN 60
-                       ELSE 40
-                   END as level_score,
-                   (w.frequency * 10) as frequency_score,
-                   sp.id IS NOT NULL as in_study_plan
-            FROM words w
-            LEFT JOIN study_plan sp ON sp.word_id = w.id AND sp.user_id = ?
-            WHERE w.id NOT IN (
-                SELECT word_id FROM learning_history
-                WHERE user_id = ? AND status = 'learned'
-            )
-            ORDER BY (level_score + frequency_score) DESC, w.rank ASC
-            LIMIT ?
-        `;
-
-        db.all(sql, [i, i + 1500, i + 1500, i + 3000, i, req.user.id, req.user.id, limit], (err, words) => {
+        db.all("SELECT theme_id FROM user_theme_preferences WHERE user_id = ?", [req.user.id], (err, prefRows) => {
             if (err) return res.status(500).json({ error: err.message });
-            res.json(words);
+
+            const themeIds = prefRows.map(r => r.theme_id);
+            const hasThemePref = themeIds.length > 0;
+
+            const themeJoin = hasThemePref
+                ? `LEFT JOIN word_themes wt_pref ON wt_pref.word_id = w.id AND wt_pref.theme_id IN (${themeIds.map(() => '?').join(',')})`
+                : '';
+            const themeScore = hasThemePref
+                ? `, CASE WHEN wt_pref.theme_id IS NOT NULL THEN 150 ELSE 0 END as theme_score`
+                : ', 0 as theme_score';
+            const themeParams = hasThemePref ? themeIds : [];
+
+            const sql = `
+                SELECT w.*,
+                       CASE
+                           WHEN sp.id IS NOT NULL THEN 200
+                           WHEN w.rank BETWEEN ? AND ? THEN 100
+                           WHEN w.rank BETWEEN ? AND ? THEN 80
+                           WHEN w.rank < ? THEN 60
+                           ELSE 40
+                       END as level_score,
+                       (w.frequency * 10) as frequency_score,
+                       sp.id IS NOT NULL as in_study_plan
+                       ${themeScore}
+                FROM words w
+                LEFT JOIN study_plan sp ON sp.word_id = w.id AND sp.user_id = ?
+                ${themeJoin}
+                WHERE w.id NOT IN (
+                    SELECT word_id FROM learning_history
+                    WHERE user_id = ? AND status = 'learned'
+                )
+                ORDER BY (level_score + frequency_score + theme_score) DESC, w.rank ASC
+                LIMIT ?
+            `;
+
+            db.all(sql, [i, i + 1500, i + 1500, i + 3000, i, req.user.id, ...themeParams, req.user.id, limit], (err, words) => {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json(words);
+            });
         });
     });
 });
@@ -582,6 +626,148 @@ app.get('/api/spelling-challenge/history', authenticate, (req, res) => {
     });
 });
 
+
+app.get('/api/themes', authenticate, (req, res) => {
+    const themeIds = req.query.ids ? req.query.ids.split(',').map(Number) : null;
+
+    let sql = `
+        SELECT t.*,
+               COUNT(DISTINCT wt.word_id) as word_count,
+               COUNT(DISTINCT CASE WHEN lh.status = 'learned' THEN wt.word_id END) as mastered_count
+        FROM themes t
+        LEFT JOIN word_themes wt ON wt.theme_id = t.id
+        LEFT JOIN learning_history lh ON lh.word_id = wt.word_id AND lh.user_id = ?
+        GROUP BY t.id
+        ORDER BY t.id ASC
+    `;
+
+    db.all(sql, [req.user.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (themeIds) {
+            rows = rows.filter(r => themeIds.includes(r.id));
+        }
+
+        res.json(rows.map(r => ({
+            id: r.id,
+            key: r.key,
+            name: r.name,
+            icon: r.icon,
+            color: r.color,
+            word_count: r.word_count,
+            mastered_count: r.mastered_count
+        })));
+    });
+});
+
+app.get('/api/themes/words', authenticate, (req, res) => {
+    const themeIds = req.query.themes ? req.query.themes.split(',').map(Number) : [];
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    const offset = (page - 1) * pageSize;
+
+    if (themeIds.length === 0) {
+        return res.json({ words: [], pagination: { page, pageSize, total: 0, totalPages: 0 } });
+    }
+
+    const placeholders = themeIds.map(() => '?').join(',');
+
+    const havingClause = themeIds.length > 1
+        ? `HAVING COUNT(DISTINCT wt.theme_id) >= 1`
+        : '';
+
+    const countSql = `
+        SELECT COUNT(*) as total FROM (
+            SELECT w.id
+            FROM words w
+            JOIN word_themes wt ON wt.word_id = w.id
+            WHERE wt.theme_id IN (${placeholders})
+            GROUP BY w.id
+            ${havingClause}
+        )
+    `;
+
+    const dataSql = `
+        SELECT w.*,
+               EXISTS(SELECT 1 FROM study_plan sp WHERE sp.user_id = ? AND sp.word_id = w.id) as in_study_plan,
+               GROUP_CONCAT(DISTINCT t.name) as theme_names,
+               GROUP_CONCAT(DISTINCT t.key) as theme_keys
+        FROM words w
+        JOIN word_themes wt ON wt.word_id = w.id
+        JOIN themes t ON t.id = wt.theme_id
+        WHERE wt.theme_id IN (${placeholders})
+        GROUP BY w.id
+        ${havingClause}
+        ORDER BY w.frequency DESC, w.rank ASC
+        LIMIT ? OFFSET ?
+    `;
+
+    const countParams = [...themeIds];
+    const dataParams = [req.user.id, ...themeIds, pageSize, offset];
+
+    db.get(countSql, countParams, (err, countResult) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const total = countResult.total;
+
+        db.all(dataSql, dataParams, (err, words) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({
+                words: words.map(w => ({
+                    ...w,
+                    theme_names: w.theme_names ? w.theme_names.split(',') : [],
+                    theme_keys: w.theme_keys ? w.theme_keys.split(',') : []
+                })),
+                pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) }
+            });
+        });
+    });
+});
+
+app.get('/api/themes/preferences', authenticate, (req, res) => {
+    const sql = `
+        SELECT t.*, utp.created_at
+        FROM user_theme_preferences utp
+        JOIN themes t ON t.id = utp.theme_id
+        WHERE utp.user_id = ?
+        ORDER BY utp.created_at ASC
+    `;
+
+    db.all(sql, [req.user.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/themes/preferences', authenticate, (req, res) => {
+    const { themeIds } = req.body;
+
+    if (!Array.isArray(themeIds) || themeIds.length > 2) {
+        return res.status(400).json({ error: '最多只能选择2个主题方向' });
+    }
+
+    db.run("DELETE FROM user_theme_preferences WHERE user_id = ?", [req.user.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (themeIds.length === 0) {
+            return res.json({ success: true, themes: [] });
+        }
+
+        const stmt = db.prepare("INSERT INTO user_theme_preferences (user_id, theme_id) VALUES (?, ?)");
+        themeIds.forEach(tid => {
+            stmt.run(req.user.id, tid);
+        });
+        stmt.finalize();
+
+        const sql = `
+            SELECT t.* FROM themes t
+            WHERE t.id IN (${themeIds.map(() => '?').join(',')})
+        `;
+        db.all(sql, themeIds, (err, themes) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, themes });
+        });
+    });
+});
 
 app.get('/api/leaderboard', authenticate, (req, res) => {
     const period = req.query.period === 'month' ? 'month' : 'week';
