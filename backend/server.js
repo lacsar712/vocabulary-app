@@ -173,7 +173,7 @@ app.post('/api/test/submit', authenticate, (req, res) => {
     });
 });
 
-// Recommendation Engine (i+1) - Enhanced with frequency and learning history
+// Recommendation Engine (i+1) - Enhanced with study plan priority, frequency and learning history
 app.get('/api/recommend', authenticate, (req, res) => {
     db.get("SELECT vocab_size FROM users WHERE id = ?", [req.user.id], (err, user) => {
         if (!user) return res.status(404).json({ error: "用户未找到" });
@@ -181,21 +181,25 @@ app.get('/api/recommend', authenticate, (req, res) => {
         const i = user.vocab_size;
 
         // Enhanced recommendation algorithm:
-        // 1. Find words slightly above user's level (i+1 principle)
-        // 2. Prioritize high-frequency words (more useful in daily life)
-        // 3. Consider words that were skipped before (give second chance after time)
-        // 4. Exclude recently learned and recently skipped words
+        // 1. **Highest priority**: Words in user's study plan (not yet learned)
+        // 2. Find words slightly above user's level (i+1 principle)
+        // 3. Prioritize high-frequency words (more useful in daily life)
+        // 4. Consider words that were skipped before (give second chance after time)
+        // 5. Exclude recently learned and recently skipped words
 
         const sql = `
             SELECT w.*,
                    CASE
-                       WHEN w.rank BETWEEN ? AND ? THEN 100  -- Sweet spot: i to i+1500
-                       WHEN w.rank BETWEEN ? AND ? THEN 80   -- Slightly above: i+1500 to i+3000
-                       WHEN w.rank < ? THEN 60               -- Below level (review)
-                       ELSE 40                               -- Much higher
+                       WHEN sp.id IS NOT NULL THEN 200                  -- Study plan words get highest priority
+                       WHEN w.rank BETWEEN ? AND ? THEN 100            -- Sweet spot: i to i+1500
+                       WHEN w.rank BETWEEN ? AND ? THEN 80             -- Slightly above: i+1500 to i+3000
+                       WHEN w.rank < ? THEN 60                         -- Below level (review)
+                       ELSE 40                                         -- Much higher
                    END as level_score,
-                   (w.frequency * 10) as frequency_score
+                   (w.frequency * 10) as frequency_score,
+                   sp.id IS NOT NULL as in_study_plan
             FROM words w
+            LEFT JOIN study_plan sp ON sp.word_id = w.id AND sp.user_id = ?
             WHERE w.id NOT IN (
                 SELECT word_id FROM learning_history
                 WHERE user_id = ? AND status = 'learned'
@@ -213,6 +217,7 @@ app.get('/api/recommend', authenticate, (req, res) => {
             i, i + 1500,           // Sweet spot range
             i + 1500, i + 3000,   // Slightly above range
             i,                     // Below level threshold
+            req.user.id,          // For study plan join
             req.user.id,          // For learned exclusion
             req.user.id           // For recent skip exclusion
         ];
@@ -250,13 +255,16 @@ app.get('/api/recommend/batch', authenticate, (req, res) => {
         const sql = `
             SELECT w.*,
                    CASE
+                       WHEN sp.id IS NOT NULL THEN 200
                        WHEN w.rank BETWEEN ? AND ? THEN 100
                        WHEN w.rank BETWEEN ? AND ? THEN 80
                        WHEN w.rank < ? THEN 60
                        ELSE 40
                    END as level_score,
-                   (w.frequency * 10) as frequency_score
+                   (w.frequency * 10) as frequency_score,
+                   sp.id IS NOT NULL as in_study_plan
             FROM words w
+            LEFT JOIN study_plan sp ON sp.word_id = w.id AND sp.user_id = ?
             WHERE w.id NOT IN (
                 SELECT word_id FROM learning_history
                 WHERE user_id = ? AND status = 'learned'
@@ -265,7 +273,7 @@ app.get('/api/recommend/batch', authenticate, (req, res) => {
             LIMIT ?
         `;
 
-        db.all(sql, [i, i + 1500, i + 1500, i + 3000, i, req.user.id, limit], (err, words) => {
+        db.all(sql, [i, i + 1500, i + 1500, i + 3000, i, req.user.id, req.user.id, limit], (err, words) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json(words);
         });
@@ -283,7 +291,6 @@ app.post('/api/learn/record', authenticate, (req, res) => {
 
 // Statistics
 app.get('/api/stats', authenticate, (req, res) => {
-    // Get history with word details
     const sql = `
         SELECT lh.*, w.word, w.definition, w.pronunciation 
         FROM learning_history lh
@@ -295,6 +302,127 @@ app.get('/api/stats', authenticate, (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ learned_count: rows.length, history: rows });
     });
+});
+
+// Study Plan - 获取用户学习计划列表
+app.get('/api/study-plan', authenticate, (req, res) => {
+    const sql = `
+        SELECT sp.id as plan_id, sp.added_at, w.*
+        FROM study_plan sp
+        JOIN words w ON sp.word_id = w.id
+        WHERE sp.user_id = ?
+        ORDER BY sp.added_at DESC
+    `;
+    db.all(sql, [req.user.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ count: rows.length, words: rows });
+    });
+});
+
+// Study Plan - 添加单词到学习计划
+app.post('/api/study-plan', authenticate, (req, res) => {
+    const { word_id } = req.body;
+    if (!word_id) return res.status(400).json({ error: '缺少 word_id 参数' });
+
+    db.run("INSERT OR IGNORE INTO study_plan (user_id, word_id) VALUES (?, ?)", 
+        [req.user.id, word_id], 
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, added: this.changes > 0 });
+        }
+    );
+});
+
+// Study Plan - 从学习计划移除单词
+app.delete('/api/study-plan/:wordId', authenticate, (req, res) => {
+    const wordId = req.params.wordId;
+    db.run("DELETE FROM study_plan WHERE user_id = ? AND word_id = ?", 
+        [req.user.id, wordId], 
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, removed: this.changes > 0 });
+        }
+    );
+});
+
+// Study Plan - 检查单词是否在学习计划中
+app.get('/api/study-plan/check/:wordId', authenticate, (req, res) => {
+    const wordId = req.params.wordId;
+    db.get("SELECT id FROM study_plan WHERE user_id = ? AND word_id = ?", 
+        [req.user.id, wordId], 
+        (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ in_plan: !!row });
+        }
+    );
+});
+
+// Word Browsing - 分页获取单词列表（支持筛选和排序）
+app.get('/api/words', authenticate, (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    const difficultyLevels = req.query.levels ? req.query.levels.split(',').map(Number) : null;
+    const sortBy = req.query.sortBy || 'difficulty'; // 'difficulty' | 'frequency'
+    const sortOrder = req.query.sortOrder || 'asc'; // 'asc' | 'desc'
+
+    const offset = (page - 1) * pageSize;
+
+    let whereClause = '';
+    let params = [];
+
+    if (difficultyLevels && difficultyLevels.length > 0) {
+        const placeholders = difficultyLevels.map(() => '?').join(',');
+        whereClause = `WHERE difficulty_level IN (${placeholders})`;
+        params = difficultyLevels;
+    }
+
+    const validSortColumns = ['difficulty', 'frequency', 'rank'];
+    const sortColumn = validSortColumns.includes(sortBy) 
+        ? (sortBy === 'difficulty' ? 'difficulty_level' : sortBy)
+        : 'difficulty_level';
+    const order = sortOrder === 'desc' ? 'DESC' : 'ASC';
+
+    const countSql = `SELECT COUNT(*) as total FROM words ${whereClause}`;
+    const dataSql = `
+        SELECT w.*, 
+               EXISTS(SELECT 1 FROM study_plan sp WHERE sp.user_id = ? AND sp.word_id = w.id) as in_study_plan
+        FROM words w
+        ${whereClause}
+        ORDER BY ${sortColumn} ${order}, w.rank ASC
+        LIMIT ? OFFSET ?
+    `;
+
+    db.get(countSql, params, (err, countResult) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const total = countResult.total;
+
+        const dataParams = [req.user.id, ...params, pageSize, offset];
+        db.all(dataSql, dataParams, (err, words) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({
+                words,
+                pagination: {
+                    page,
+                    pageSize,
+                    total,
+                    totalPages: Math.ceil(total / pageSize)
+                }
+            });
+        });
+    });
+});
+
+// Get all difficulty levels info
+app.get('/api/difficulty-levels', authenticate, (req, res) => {
+    const levels = [
+        { level: 1, name: '基础', description: '日常简单词汇' },
+        { level: 2, name: '初级', description: '入门常用词汇' },
+        { level: 3, name: '中级', description: '进阶常用词汇' },
+        { level: 4, name: '中高级', description: '较难进阶词汇' },
+        { level: 5, name: '高级', description: '高难度词汇' },
+        { level: 6, name: '专业', description: '专业学术词汇' }
+    ];
+    res.json(levels);
 });
 
 

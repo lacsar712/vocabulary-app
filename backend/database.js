@@ -136,10 +136,21 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
         word_id INTEGER,
-        status TEXT, -- 'learned', 'mastered'
+        status TEXT, -- 'learned', 'mastered', 'skipped'
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id),
         FOREIGN KEY(word_id) REFERENCES words(id)
+    )`);
+
+    // Study Plan - 用户收藏的单词，用于优先推荐
+    db.run(`CREATE TABLE IF NOT EXISTS study_plan (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        word_id INTEGER,
+        added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(word_id) REFERENCES words(id),
+        UNIQUE(user_id, word_id)
     )`);
 
     // Seed Data with UPSERT - delay to ensure migration completes

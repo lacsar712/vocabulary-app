@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import VocabularyTest from './pages/VocabularyTest';
+import WordBrowse from './pages/WordBrowse';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { isAuthenticated } = useAuth();
@@ -21,6 +22,11 @@ function App() {
             <Route path="/test" element={
               <ProtectedRoute>
                 <VocabularyTest />
+              </ProtectedRoute>
+            } />
+            <Route path="/browse" element={
+              <ProtectedRoute>
+                <WordBrowse />
               </ProtectedRoute>
             } />
             <Route path="/" element={

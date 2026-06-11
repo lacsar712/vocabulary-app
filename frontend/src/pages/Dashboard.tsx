@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw } from 'lucide-react';
+import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Library } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -203,14 +203,21 @@ const Dashboard: React.FC = () => {
                         <h3 className="text-lg font-bold text-white mb-4">快捷操作</h3>
                         <div className="space-y-3">
                             <button
-                                onClick={() => setShowReview(true)} // Added onClick handler
+                                onClick={() => navigate('/browse')}
+                                className="w-full text-left p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white flex items-center gap-3"
+                            >
+                                <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                                浏览词库
+                            </button>
+                            <button
+                                onClick={() => setShowReview(true)}
                                 className="w-full text-left p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white flex items-center gap-3"
                             >
                                 <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
                                 复习已掌握单词
                             </button>
                             <button
-                                onClick={() => navigate('/test')} // Added onClick handler
+                                onClick={() => navigate('/test')}
                                 className="w-full text-left p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition text-slate-300 hover:text-white flex items-center gap-3"
                             >
                                 <span className="w-2 h-2 rounded-full bg-amber-400"></span>
