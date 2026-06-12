@@ -25,12 +25,15 @@ interface AnswerResult {
 
 type GamePhase = 'rules' | 'playing' | 'result';
 
-const TOTAL_QUESTIONS = 10;
+const REQUESTED_QUESTIONS = 10;
 
 const SpellingChallenge: React.FC = () => {
     const [gamePhase, setGamePhase] = useState<GamePhase>('rules');
     const [words, setWords] = useState<ChallengeWord[]>([]);
     const [sessionId, setSessionId] = useState<string>('');
+    const [requestedCount, setRequestedCount] = useState<number>(REQUESTED_QUESTIONS);
+    const [actualCount, setActualCount] = useState<number>(0);
+    const [isFallback, setIsFallback] = useState<boolean>(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [userInput, setUserInput] = useState('');
     const [answers, setAnswers] = useState<AnswerResult[]>([]);
@@ -49,9 +52,12 @@ const SpellingChallenge: React.FC = () => {
     const fetchQuestions = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await api.get(`/spelling-challenge/questions?count=${TOTAL_QUESTIONS}`);
+            const res = await api.get(`/spelling-challenge/questions?count=${REQUESTED_QUESTIONS}`);
             setWords(res.data.words);
             setSessionId(res.data.sessionId);
+            setRequestedCount(res.data.requestedCount || REQUESTED_QUESTIONS);
+            setActualCount(res.data.actualCount || res.data.words.length);
+            setIsFallback(res.data.isFallback || false);
         } catch (e) {
             console.error(e);
         } finally {
@@ -76,6 +82,9 @@ const SpellingChallenge: React.FC = () => {
         setStartTime(Date.now());
         setQuestionStartTime(Date.now());
         setPlayedAudio(false);
+        setActualCount(0);
+        setIsFallback(false);
+        setRequestedCount(REQUESTED_QUESTIONS);
         fetchQuestions().then(() => {
             setTimeout(() => inputRef.current?.focus(), 100);
         });
@@ -257,7 +266,7 @@ const SpellingChallenge: React.FC = () => {
                             <div>
                                 <h3 className="font-semibold text-text-primary mb-1">游戏规则</h3>
                                 <ul className="text-text-secondary text-sm space-y-1">
-                                    <li>• 每局共 {TOTAL_QUESTIONS} 道题，题目难度贴合你的词汇量</li>
+                                    <li>• 每局最多 {requestedCount} 道题，题目难度贴合你的词汇量</li>
                                     <li>• 系统会朗读单词发音，同时给出中文释义</li>
                                     <li>• 在输入框中拼写正确的英文单词</li>
                                     <li>• 提交后立即显示对错和正确答案</li>
@@ -322,7 +331,7 @@ const SpellingChallenge: React.FC = () => {
                             <div className="text-xs text-text-muted">得分</div>
                         </div>
                         <div className="bg-card-bg p-4 rounded-xl text-center">
-                            <div className="text-3xl font-bold text-emerald-400 mb-1">{correctCount}/{TOTAL_QUESTIONS}</div>
+                            <div className="text-3xl font-bold text-emerald-400 mb-1">{correctCount}/{actualCount || answers.length}</div>
                             <div className="text-xs text-text-muted">正确率</div>
                         </div>
                         <div className="bg-card-bg p-4 rounded-xl text-center">
@@ -330,6 +339,17 @@ const SpellingChallenge: React.FC = () => {
                             <div className="text-xs text-text-muted">用时</div>
                         </div>
                     </div>
+
+                    {actualCount > 0 && actualCount < requestedCount && (
+                        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                            <p className="text-sm text-amber-300">
+                                <span className="font-semibold">提示：</span>
+                                当前可用单词不足 {requestedCount} 道，本局共 {actualCount} 道题。
+                                {isFallback && ' 由于您词汇量区间的新单词不足，已从全词库中补充。'}
+                                {' '}24小时内已挑战过的单词不会重复出现。
+                            </p>
+                        </div>
+                    )}
 
                     <div className="mb-8">
                         <h3 className="font-semibold text-text-primary mb-4">答题详情</h3>
@@ -393,7 +413,7 @@ const SpellingChallenge: React.FC = () => {
             <div className="fixed top-0 left-0 w-full h-2 progress-track">
                 <div
                     className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
-                    style={{ width: `${((currentIndex + (showResult ? 1 : 0)) / TOTAL_QUESTIONS) * 100}%` }}
+                    style={{ width: `${((currentIndex + (showResult ? 1 : 0)) / Math.max(1, words.length)) * 100}%` }}
                 />
             </div>
 
@@ -405,9 +425,17 @@ const SpellingChallenge: React.FC = () => {
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface/80 backdrop-blur">
                     <Target size={16} className="text-primary" />
                     <span className="text-sm font-semibold text-text-primary">
-                        {currentIndex + 1} / {TOTAL_QUESTIONS}
+                        {currentIndex + 1} / {Math.max(1, words.length)}
                     </span>
                 </div>
+                {words.length > 0 && words.length < requestedCount && (
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/20 backdrop-blur">
+                        <Info size={16} className="text-amber-400" />
+                        <span className="text-xs text-amber-300">
+                            共{words.length}道题
+                        </span>
+                    </div>
+                )}
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface/80 backdrop-blur">
                     <Check size={16} className="text-emerald-400" />
                     <span className="text-sm font-semibold text-emerald-400">{correctCount}</span>

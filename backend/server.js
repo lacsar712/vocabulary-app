@@ -614,6 +614,9 @@ app.get('/api/spelling-challenge/questions', authenticate, (req, res) => {
         db.all(sql, [minRank, maxRank, req.user.id, vocabSize, count], (err, words) => {
             if (err) return res.status(500).json({ error: err.message });
 
+            let finalWords = words;
+            let isFallback = false;
+
             // If not enough words in range, fallback to any words
             if (words.length < count) {
                 const fallbackSql = `
@@ -628,10 +631,16 @@ app.get('/api/spelling-challenge/questions', authenticate, (req, res) => {
                 `;
                 db.all(fallbackSql, [req.user.id, count], (err, fallbackWords) => {
                     if (err) return res.status(500).json({ error: err.message });
+                    finalWords = fallbackWords;
+                    isFallback = true;
+                    
                     const sessionId = `spelling_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                     res.json({
                         sessionId,
-                        words: fallbackWords.map(w => ({
+                        requestedCount: count,
+                        actualCount: finalWords.length,
+                        isFallback,
+                        words: finalWords.map(w => ({
                             id: w.id,
                             word: w.word,
                             pronunciation: w.pronunciation,
@@ -648,7 +657,10 @@ app.get('/api/spelling-challenge/questions', authenticate, (req, res) => {
             const sessionId = `spelling_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             res.json({
                 sessionId,
-                words: words.map(w => ({
+                requestedCount: count,
+                actualCount: finalWords.length,
+                isFallback,
+                words: finalWords.map(w => ({
                     id: w.id,
                     word: w.word,
                     pronunciation: w.pronunciation,
