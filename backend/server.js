@@ -835,20 +835,34 @@ app.get('/api/listening-practice/questions', authenticate, (req, res) => {
         let targetParams = [];
 
         if (mode === 'consolidate') {
-            // 巩固模式：从已掌握词汇中选取
-            targetWordsSql = `
-                SELECT w.*
-                FROM words w
-                JOIN learning_history lh ON lh.word_id = w.id
-                WHERE lh.user_id = ? AND lh.status = 'learned'
-                  AND w.id NOT IN (
-                    SELECT word_id FROM listening_practice_history
-                    WHERE user_id = ? AND created_at > datetime('now', '-24 hours')
-                  )
-                ORDER BY RANDOM()
-                LIMIT ?
-            `;
-            targetParams = [req.user.id, req.user.id, count];
+            // 巩固模式：先检查是否有已掌握词汇
+            db.get("SELECT COUNT(*) as cnt FROM learning_history WHERE user_id = ? AND status = 'learned'", [req.user.id], (err, masteredRow) => {
+                if (err) return res.status(500).json({ error: err.message });
+                if (!masteredRow || masteredRow.cnt === 0) {
+                    return res.json({ noMasteredWords: true, mode: 'consolidate' });
+                }
+
+                const consolidateSql = `
+                    SELECT w.*
+                    FROM words w
+                    JOIN learning_history lh ON lh.word_id = w.id
+                    WHERE lh.user_id = ? AND lh.status = 'learned'
+                      AND w.id NOT IN (
+                        SELECT word_id FROM listening_practice_history
+                        WHERE user_id = ? AND created_at > datetime('now', '-24 hours')
+                      )
+                    ORDER BY RANDOM()
+                    LIMIT ?
+                `;
+                db.all(consolidateSql, [req.user.id, req.user.id, count], (err2, targetWords) => {
+                    if (err2) return res.status(500).json({ error: err2.message });
+                    if (targetWords.length === 0) {
+                        return res.json({ noMasteredWords: true, mode: 'consolidate' });
+                    }
+                    buildQuestions(req.user.id, targetWords, count, mode, res);
+                });
+            });
+            return;
         } else {
             // 挑战模式：选取接近用户词汇量上限的新词
             const minRank = Math.max(100, Math.floor(vocabSize * 0.85));

@@ -61,13 +61,19 @@ const ListeningPractice: React.FC = () => {
     const [currentStreak, setCurrentStreak] = useState(0);
     const [maxStreak, setMaxStreak] = useState(0);
     const [playedAudio, setPlayedAudio] = useState(false);
+    const [noMasteredWords, setNoMasteredWords] = useState(false);
 
     const navigate = useNavigate();
 
     const fetchQuestions = useCallback(async (selectedMode: GameMode) => {
         try {
             setLoading(true);
+            setNoMasteredWords(false);
             const res = await api.get(`/listening-practice/questions?mode=${selectedMode}&count=${TOTAL_QUESTIONS}`);
+            if (res.data.noMasteredWords) {
+                setNoMasteredWords(true);
+                return;
+            }
             setQuestions(res.data.questions);
             setSessionId(res.data.sessionId);
             setMode(res.data.mode);
@@ -90,6 +96,7 @@ const ListeningPractice: React.FC = () => {
 
     const selectMode = useCallback((selectedMode: GameMode) => {
         setMode(selectedMode);
+        setNoMasteredWords(false);
         setGamePhase('rules');
     }, []);
 
@@ -110,6 +117,7 @@ const ListeningPractice: React.FC = () => {
 
     const restartWithMode = useCallback((newMode: GameMode) => {
         setMode(newMode);
+        setNoMasteredWords(false);
         setGamePhase('playing');
         setCurrentIndex(0);
         setAnswers([]);
@@ -249,6 +257,58 @@ const ListeningPractice: React.FC = () => {
                 <div className="text-primary text-xl font-bold animate-pulse">
                     组题中...
                 </div>
+            </div>
+        );
+    }
+
+    if (noMasteredWords && gamePhase === 'playing') {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-6 bg-page">
+                <div className="fixed top-4 right-4 z-50">
+                    <ThemeToggle />
+                </div>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="glass-panel p-8 md:p-10 rounded-3xl max-w-lg w-full"
+                >
+                    <div className="text-center mb-8">
+                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
+                            <Info size={40} className="text-amber-400" />
+                        </div>
+                        <h1 className="text-2xl font-bold text-text-primary mb-2">
+                            暂无已掌握的词汇
+                        </h1>
+                        <p className="text-text-muted leading-relaxed">
+                            巩固模式需要围绕你已掌握的词汇进行复习，但你目前还没有标记任何单词为「已掌握」。
+                        </p>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-4 bg-card-bg rounded-xl mb-6">
+                        <Zap size={20} className="text-violet-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <h3 className="font-semibold text-text-primary mb-1">试试挑战模式</h3>
+                            <p className="text-text-secondary text-sm">
+                                挑战模式会为你选取适合你水平的新词，帮你扩展听力边界。掌握新词后再回来巩固吧！
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <button
+                            onClick={() => restartWithMode('challenge')}
+                            className="w-full flex items-center justify-center gap-2 py-4 text-lg rounded-xl font-semibold transition bg-violet-500/15 border-2 border-violet-500/40 text-violet-300 hover:bg-violet-500/25"
+                        >
+                            <Zap size={20} /> 切换到挑战模式
+                        </button>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="btn-secondary w-full flex items-center justify-center gap-2"
+                        >
+                            <Home size={18} /> 返回主页先学几个词
+                        </button>
+                    </div>
+                </motion.div>
             </div>
         );
     }
