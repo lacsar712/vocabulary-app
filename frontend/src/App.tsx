@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import VocabularyTest from './pages/VocabularyTest';
 import WordBrowse from './pages/WordBrowse';
 import SpellingChallenge from './pages/SpellingChallenge';
+import ListeningPractice from './pages/ListeningPractice';
 import Leaderboard from './pages/Leaderboard';
 import ThemeLearning from './pages/ThemeLearning';
 import NotificationCenter from './pages/NotificationCenter';
@@ -45,6 +46,11 @@ function App() {
               <Route path="/spelling-challenge" element={
                 <ProtectedRoute>
                   <SpellingChallenge />
+                </ProtectedRoute>
+              } />
+              <Route path="/listening-practice" element={
+                <ProtectedRoute>
+                  <ListeningPractice />
                 </ProtectedRoute>
               } />
               <Route path="/leaderboard" element={

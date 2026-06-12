@@ -704,6 +704,270 @@ app.get('/api/spelling-challenge/history', authenticate, (req, res) => {
     });
 });
 
+// ========== Listening Practice (听力辨词) API ==========
+
+// Helper: Find distractor words with same POS and similar definition/rank
+const findDistractors = (db, targetWord, vocabSize, excludeIds, count, callback) => {
+    const samePosSql = `
+        SELECT w.*
+        FROM words w
+        WHERE w.pos = ?
+          AND w.id != ?
+          AND w.id NOT IN (${excludeIds.length > 0 ? excludeIds.join(',') : '0'})
+        ORDER BY ABS(w.rank - ?) ASC, RANDOM()
+        LIMIT ?
+    `;
+
+    db.all(samePosSql, [targetWord.pos, targetWord.id, targetWord.rank, count], (err, samePosWords) => {
+        if (err) return callback(err, null);
+
+        if (samePosWords.length >= count) {
+            return callback(null, samePosWords.slice(0, count));
+        }
+
+        const needed = count - samePosWords.length;
+        const existingIds = [...excludeIds, targetWord.id, ...samePosWords.map(w => w.id)];
+
+        const fallbackSql = `
+            SELECT w.*
+            FROM words w
+            WHERE w.id NOT IN (${existingIds.join(',')})
+            ORDER BY ABS(w.rank - ?) ASC, RANDOM()
+            LIMIT ?
+        `;
+
+        db.all(fallbackSql, [targetWord.rank, needed], (err2, fallbackWords) => {
+            if (err2) return callback(err2, null);
+            callback(null, [...samePosWords, ...fallbackWords]);
+        });
+    });
+};
+
+// Listening Practice - Generate questions for a new round
+app.get('/api/listening-practice/questions', authenticate, (req, res) => {
+    const mode = req.query.mode === 'challenge' ? 'challenge' : 'consolidate';
+    const count = parseInt(req.query.count) || 5;
+
+    db.get("SELECT vocab_size FROM users WHERE id = ?", [req.user.id], (err, user) => {
+        if (!user) return res.status(404).json({ error: "用户未找到" });
+
+        const vocabSize = user.vocab_size || 3000;
+
+        let targetWordsSql;
+        let targetParams = [];
+
+        if (mode === 'consolidate') {
+            // 巩固模式：从已掌握词汇中选取
+            targetWordsSql = `
+                SELECT w.*
+                FROM words w
+                JOIN learning_history lh ON lh.word_id = w.id
+                WHERE lh.user_id = ? AND lh.status = 'learned'
+                  AND w.id NOT IN (
+                    SELECT word_id FROM listening_practice_history
+                    WHERE user_id = ? AND created_at > datetime('now', '-24 hours')
+                  )
+                ORDER BY RANDOM()
+                LIMIT ?
+            `;
+            targetParams = [req.user.id, req.user.id, count];
+        } else {
+            // 挑战模式：选取接近用户词汇量上限的新词
+            const minRank = Math.max(100, Math.floor(vocabSize * 0.85));
+            const maxRank = Math.min(10000, Math.ceil(vocabSize * 1.3));
+            targetWordsSql = `
+                SELECT w.*
+                FROM words w
+                WHERE w.rank BETWEEN ? AND ?
+                  AND w.id NOT IN (
+                    SELECT word_id FROM learning_history
+                    WHERE user_id = ? AND status = 'learned'
+                  )
+                  AND w.id NOT IN (
+                    SELECT word_id FROM listening_practice_history
+                    WHERE user_id = ? AND created_at > datetime('now', '-24 hours')
+                  )
+                ORDER BY ABS(w.rank - ?) ASC, RANDOM()
+                LIMIT ?
+            `;
+            targetParams = [minRank, maxRank, req.user.id, req.user.id, vocabSize, count];
+        }
+
+        db.all(targetWordsSql, targetParams, (err, targetWords) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            if (targetWords.length < count) {
+                // Fallback: if not enough words, pick any words
+                const fallbackSql = `
+                    SELECT w.*
+                    FROM words w
+                    WHERE w.id NOT IN (
+                        SELECT word_id FROM listening_practice_history
+                        WHERE user_id = ? AND created_at > datetime('now', '-24 hours')
+                    )
+                    ORDER BY RANDOM()
+                    LIMIT ?
+                `;
+                db.all(fallbackSql, [req.user.id, count], (err2, fallbackWords) => {
+                    if (err2) return res.status(500).json({ error: err2.message });
+                    buildQuestions(req.user.id, fallbackWords, count, mode, res);
+                });
+                return;
+            }
+
+            buildQuestions(req.user.id, targetWords, count, mode, res);
+        });
+    });
+});
+
+// Helper: Build question objects with options
+const buildQuestions = (userId, targetWords, count, mode, res) => {
+    const sessionId = `listening_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const questions = [];
+    const usedWordIds = targetWords.map(w => w.id);
+
+    let processed = 0;
+
+    targetWords.forEach((targetWord, idx) => {
+        findDistractors(db, targetWord, 3000, usedWordIds, 3, (err, distractors) => {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+
+            // Shuffle options
+            const allOptions = [
+                { id: targetWord.id, word: targetWord.word, pronunciation: targetWord.pronunciation, pos: targetWord.pos, definition: targetWord.definition, is_correct: true },
+                ...distractors.map(d => ({ id: d.id, word: d.word, pronunciation: d.pronunciation, pos: d.pos, definition: d.definition, is_correct: false }))
+            ];
+
+            // Fisher-Yates shuffle
+            for (let i = allOptions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
+            }
+
+            // Track correct option index after shuffle
+            const correctOptionIndex = allOptions.findIndex(o => o.is_correct);
+
+            questions.push({
+                question_index: idx,
+                target_word_id: targetWord.id,
+                target_word: targetWord.word,
+                target_pronunciation: targetWord.pronunciation,
+                target_pos: targetWord.pos,
+                target_definition: targetWord.definition,
+                correct_option_index: correctOptionIndex,
+                options: allOptions.map((o, i) => ({
+                    option_index: i,
+                    word_id: o.id,
+                    word: o.word,
+                    pronunciation: o.pronunciation,
+                    pos: o.pos,
+                    definition: o.definition
+                }))
+            });
+
+            processed++;
+
+            if (processed === targetWords.length) {
+                // Sort by question_index to maintain order
+                questions.sort((a, b) => a.question_index - b.question_index);
+                res.json({
+                    sessionId,
+                    mode,
+                    total_questions: questions.length,
+                    questions
+                });
+            }
+        });
+    });
+};
+
+// Listening Practice - Submit answer for a single question
+app.post('/api/listening-practice/answer', authenticate, (req, res) => {
+    const { sessionId, wordId, selectedOptionIndex, isCorrect, timeSpent } = req.body;
+
+    if (!sessionId || wordId === undefined || selectedOptionIndex === undefined) {
+        return res.status(400).json({ error: "缺少必要参数" });
+    }
+
+    const correct = isCorrect ? 1 : 0;
+    const time = timeSpent || 0;
+
+    db.run(
+        "INSERT INTO listening_practice_history (user_id, session_id, word_id, selected_option_id, is_correct, time_spent) VALUES (?, ?, ?, ?, ?, ?)",
+        [req.user.id, sessionId, wordId, selectedOptionIndex, correct, time],
+        (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        }
+    );
+});
+
+// Listening Practice - Submit complete round result
+app.post('/api/listening-practice/complete', authenticate, (req, res) => {
+    const { sessionId, mode, totalQuestions, correctCount, totalTime, avgReactionTime, maxStreak, answers } = req.body;
+
+    if (!sessionId || totalQuestions === undefined || correctCount === undefined) {
+        return res.status(400).json({ error: "缺少必要参数" });
+    }
+
+    const accuracy = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+    const score = correctCount * 100 + maxStreak * 20;
+
+    if (accuracy === 100) {
+        createNotification(req.user.id, 'achievement_unlock', '听力辨词满分！', `恭喜！你在听力辨词（${mode === 'challenge' ? '挑战模式' : '巩固模式'}）中获得了满分！`, `你在本轮听力辨词练习中全部答对，最高连对 ${maxStreak} 题，得分 ${score} 分！`);
+    } else if (accuracy >= 80) {
+        createNotification(req.user.id, 'achievement_unlock', '听力辨词优秀！', `你在听力辨词中获得 ${accuracy}% 正确率`, `本次听力辨词你答对了 ${correctCount}/${totalQuestions} 题，最高连对 ${maxStreak} 题，平均反应时间 ${avgReactionTime || 0}秒，得分 ${score} 分。`);
+    }
+
+    db.run(
+        "INSERT INTO listening_practice_sessions (user_id, session_id, mode, total_questions, correct_count, total_time, avg_reaction_time, max_streak, score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [req.user.id, sessionId, mode, totalQuestions, correctCount, totalTime || 0, avgReactionTime || 0, maxStreak || 0, score],
+        function (err) {
+            if (err) {
+                if (err.message.includes('UNIQUE')) {
+                    db.run(
+                        "UPDATE listening_practice_sessions SET total_questions = ?, correct_count = ?, total_time = ?, avg_reaction_time = ?, max_streak = ?, score = ? WHERE session_id = ? AND user_id = ?",
+                        [totalQuestions, correctCount, totalTime || 0, avgReactionTime || 0, maxStreak || 0, score, sessionId, req.user.id],
+                        (updateErr) => {
+                            if (updateErr) return res.status(500).json({ error: updateErr.message });
+                            res.json({ success: true, sessionId, score, correctCount, totalQuestions, accuracy });
+                        }
+                    );
+                    return;
+                }
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ success: true, sessionId, score, correctCount, totalQuestions, accuracy });
+        }
+    );
+});
+
+// Listening Practice - Get user's practice history
+app.get('/api/listening-practice/history', authenticate, (req, res) => {
+    const limit = parseInt(req.query.limit) || 10;
+
+    const sql = `
+        SELECT lps.*,
+               (SELECT COUNT(*) FROM listening_practice_sessions WHERE user_id = ?) as total_sessions,
+               (SELECT AVG(score) FROM listening_practice_sessions WHERE user_id = ?) as avg_score
+        FROM listening_practice_sessions lps
+        WHERE lps.user_id = ?
+        ORDER BY lps.created_at DESC
+        LIMIT ?
+    `;
+
+    db.all(sql, [req.user.id, req.user.id, req.user.id, limit], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({
+            history: rows,
+            totalSessions: rows[0]?.total_sessions || 0,
+            avgScore: rows[0]?.avg_score ? Math.round(rows[0].avg_score) : 0
+        });
+    });
+});
+
 
 app.get('/api/themes', authenticate, (req, res) => {
     const themeIds = req.query.ids ? req.query.ids.split(',').map(Number) : null;

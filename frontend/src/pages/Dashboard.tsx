@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import api from '../api';
-import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy, Bookmark, Bell, Settings, NotebookPen, Plus, Check } from 'lucide-react';
+import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy, Bookmark, Bell, Settings, NotebookPen, Plus, Check, Headphones } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 import SettingsPanel from '../components/SettingsPanel';
 import { motion } from 'framer-motion';
@@ -365,6 +365,13 @@ const Dashboard: React.FC = () => {
                                 <span className="w-2 h-2 rounded-full bg-pink-400"></span>
                                 <Gamepad2 size={16} className="text-accent" />
                                 听音拼写挑战
+                            </button>
+                            <button
+                                onClick={() => navigate('/listening-practice')}
+                                className="w-full text-left p-3 rounded-lg bg-gradient-to-r from-teal-500/10 to-emerald-500/10 hover:from-teal-500/20 hover:to-emerald-500/20 transition text-text-secondary hover:text-text-primary flex items-center gap-3 border border-teal-500/30"
+                            >
+                                <Headphones size={16} className="text-teal-400" />
+                                <span className="flex-1">听力辨词训练</span>
                             </button>
                             <button
                                 onClick={() => navigate('/leaderboard')}

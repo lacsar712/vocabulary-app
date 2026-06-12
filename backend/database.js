@@ -333,6 +333,34 @@ db.serialize(() => {
     db.run(`CREATE INDEX IF NOT EXISTS idx_vocab_notebook_user ON vocabulary_notebook(user_id)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_vocab_notebook_user_word ON vocabulary_notebook(user_id, word_id)`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS listening_practice_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        session_id TEXT,
+        word_id INTEGER,
+        selected_option_id INTEGER,
+        is_correct INTEGER,
+        time_spent INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(word_id) REFERENCES words(id)
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS listening_practice_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        session_id TEXT UNIQUE,
+        mode TEXT,
+        total_questions INTEGER,
+        correct_count INTEGER,
+        total_time INTEGER,
+        avg_reaction_time INTEGER,
+        max_streak INTEGER,
+        score INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )`);
+
     setTimeout(() => {
         const stmt = db.prepare(`
             INSERT INTO words (word, pronunciation, pos, definition, example, rank, frequency, difficulty_level)
