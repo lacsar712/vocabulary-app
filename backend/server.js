@@ -1365,14 +1365,24 @@ app.get('/api/vocabulary-notebook', authenticate, (req, res) => {
 
     let whereClause = 'WHERE vn.user_id = ?';
     let params = [req.user.id];
+    let filterParams = [req.user.id];
 
     if (keyword) {
         whereClause += ` AND (w.word LIKE ? OR w.definition LIKE ?)`;
         params.push(keyword, keyword);
+        filterParams.push(keyword, keyword);
     }
 
-    const countSql = `
+    // 完整总数（不受搜索条件影响）
+    const totalSql = `
         SELECT COUNT(*) as total
+        FROM vocabulary_notebook
+        WHERE user_id = ?
+    `;
+
+    // 筛选后数量（受搜索条件影响）
+    const filteredCountSql = `
+        SELECT COUNT(*) as filtered_count
         FROM vocabulary_notebook vn
         JOIN words w ON vn.word_id = w.id
         ${whereClause}
@@ -1389,24 +1399,29 @@ app.get('/api/vocabulary-notebook', authenticate, (req, res) => {
         ORDER BY ${sortBy} ${sortOrder}
     `;
 
-    db.get(countSql, params, (err, countResult) => {
+    db.get(totalSql, [req.user.id], (err, totalResult) => {
         if (err) return res.status(500).json({ error: err.message });
 
-        db.all(dataSql, params, (err, rows) => {
-            if (err) return res.status(500).json({ error: err.message });
+        db.get(filteredCountSql, filterParams, (err2, filteredResult) => {
+            if (err2) return res.status(500).json({ error: err2.message });
 
-            // Get weekly added count
-            db.get(`
-                SELECT COUNT(*) as weekly_added
-                FROM vocabulary_notebook
-                WHERE user_id = ? AND added_at >= datetime('now', '-7 days')
-            `, [req.user.id], (err2, weeklyResult) => {
-                if (err2) return res.status(500).json({ error: err2.message });
+            db.all(dataSql, params, (err3, rows) => {
+                if (err3) return res.status(500).json({ error: err3.message });
 
-                res.json({
-                    total: countResult.total,
-                    weekly_added: weeklyResult.weekly_added,
-                    words: rows
+                // Get weekly added count
+                db.get(`
+                    SELECT COUNT(*) as weekly_added
+                    FROM vocabulary_notebook
+                    WHERE user_id = ? AND added_at >= datetime('now', '-7 days')
+                `, [req.user.id], (err4, weeklyResult) => {
+                    if (err4) return res.status(500).json({ error: err4.message });
+
+                    res.json({
+                        total: totalResult.total,
+                        filtered_count: filteredResult.filtered_count,
+                        weekly_added: weeklyResult.weekly_added,
+                        words: rows
+                    });
                 });
             });
         });

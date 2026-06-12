@@ -41,6 +41,7 @@ const VocabularyNotebook: React.FC = () => {
     const navigate = useNavigate();
     const [words, setWords] = useState<NotebookWord[]>([]);
     const [total, setTotal] = useState(0);
+    const [filteredCount, setFilteredCount] = useState(0);
     const [weeklyAdded, setWeeklyAdded] = useState(0);
     const [loading, setLoading] = useState(true);
     const [searchKeyword, setSearchKeyword] = useState('');
@@ -61,6 +62,7 @@ const VocabularyNotebook: React.FC = () => {
             const res = await api.get(`/vocabulary-notebook?${params.toString()}`);
             setWords(res.data.words);
             setTotal(res.data.total);
+            setFilteredCount(res.data.filtered_count ?? res.data.total);
             setWeeklyAdded(res.data.weekly_added);
         } catch (e) {
             console.error(e);
@@ -116,8 +118,12 @@ const VocabularyNotebook: React.FC = () => {
     const handleRemove = async (wordId: number) => {
         try {
             await api.delete(`/vocabulary-notebook/${wordId}`);
+            const wasInList = words.some(w => w.word_id === wordId);
             setWords(prev => prev.filter(w => w.word_id !== wordId));
             setTotal(prev => Math.max(0, prev - 1));
+            if (wasInList) {
+                setFilteredCount(prev => Math.max(0, prev - 1));
+            }
             setSelectedIds(prev => {
                 const next = new Set(prev);
                 next.delete(wordId);
@@ -136,8 +142,10 @@ const VocabularyNotebook: React.FC = () => {
                 word_ids: Array.from(selectedIds)
             });
             const removed = new Set(selectedIds);
+            const removedFromList = words.filter(w => removed.has(w.word_id)).length;
             setWords(prev => prev.filter(w => !removed.has(w.word_id)));
             setTotal(prev => Math.max(0, prev - removed.size));
+            setFilteredCount(prev => Math.max(0, prev - removedFromList));
             setSelectedIds(new Set());
         } catch (e) {
             console.error(e);
@@ -147,8 +155,12 @@ const VocabularyNotebook: React.FC = () => {
     const handleMarkMastered = async (wordId: number) => {
         try {
             await api.post(`/vocabulary-notebook/${wordId}/master`);
+            const wasInList = words.some(w => w.word_id === wordId);
             setWords(prev => prev.filter(w => w.word_id !== wordId));
             setTotal(prev => Math.max(0, prev - 1));
+            if (wasInList) {
+                setFilteredCount(prev => Math.max(0, prev - 1));
+            }
             setExpandedIds(prev => {
                 const next = new Set(prev);
                 next.delete(wordId);
@@ -358,6 +370,30 @@ const VocabularyNotebook: React.FC = () => {
                     </motion.div>
                 ) : (
                     <div className="space-y-3">
+                        {/* 搜索结果提示 */}
+                        {searchKeyword.trim() && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="glass-panel p-3 md:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3"
+                            >
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Search size={16} className="text-primary" />
+                                    <span className="text-text-muted">
+                                        搜索「<span className="text-primary font-semibold">{searchKeyword.trim()}</span>」
+                                        共找到 <span className="text-text-primary font-bold">{filteredCount}</span> 个匹配单词
+                                        <span className="text-text-faint">（生词本总数 {total}）</span>
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setSearchKeyword('')}
+                                    className="px-3 py-1.5 rounded-lg text-xs bg-card-bg hover:bg-surface transition text-text-secondary hover:text-text-primary border border-card-border cursor-pointer flex items-center gap-1"
+                                >
+                                    <X size={14} />
+                                    清除搜索
+                                </button>
+                            </motion.div>
+                        )}
                         <AnimatePresence>
                             {words.map((word, index) => {
                                 const isExpanded = expandedIds.has(word.word_id);
