@@ -4,6 +4,7 @@ import api from '../api';
 interface User {
     id: number;
     username: string;
+    nickname: string | null;
     vocab_size: number;
     onboarding_completed?: number;
 }
@@ -17,6 +18,7 @@ interface AuthContextType {
     completeOnboarding: () => Promise<void>;
     resetOnboarding: () => Promise<void>;
     checkNeedsOnboarding: () => Promise<boolean>;
+    updateNickname: (nickname: string | null) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -85,10 +87,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const updateNickname = async (nickname: string | null) => {
+        try {
+            const res = await api.put('/me/nickname', { nickname });
+            setUser(prev => prev ? { ...prev, ...res.data.user } : prev);
+        } catch (e) {
+            console.error(e);
+            throw e;
+        }
+    };
+
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-background text-primary">Loading...</div>;
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, refreshUser, completeOnboarding, resetOnboarding, checkNeedsOnboarding }}>
+        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, refreshUser, completeOnboarding, resetOnboarding, checkNeedsOnboarding, updateNickname }}>
             {children}
         </AuthContext.Provider>
     );

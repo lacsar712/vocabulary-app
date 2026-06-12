@@ -351,6 +351,7 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE,
         password_hash TEXT,
+        nickname TEXT,
         vocab_size INTEGER DEFAULT 0,
         onboarding_completed INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -366,6 +367,12 @@ db.serialize(() => {
             db.run("ALTER TABLE users ADD COLUMN onboarding_completed INTEGER DEFAULT 0", (err) => {
                 if (err) console.error('Error adding onboarding_completed column:', err);
                 else console.log('Added onboarding_completed column to users table');
+            });
+        }
+        if (!columnNames.includes('nickname')) {
+            db.run("ALTER TABLE users ADD COLUMN nickname TEXT", (err) => {
+                if (err) console.error('Error adding nickname column:', err);
+                else console.log('Added nickname column to users table');
             });
         }
     });

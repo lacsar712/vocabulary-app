@@ -7,13 +7,14 @@ import { ThemeToggle } from '../components/ThemeToggle';
 const Register: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [nickname, setNickname] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post('/register', { username, password });
+            await api.post('/register', { username, password, nickname: nickname.trim() || null });
             navigate('/login');
         } catch (err: any) {
             setError(err.response?.data?.error || 'Registration failed');
@@ -41,11 +42,21 @@ const Register: React.FC = () => {
                     <div>
                         <input
                             type="text"
-                            placeholder="用户名"
+                            placeholder="用户名（登录用）"
                             className="input-field"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             required
+                        />
+                    </div>
+                    <div>
+                        <input
+                            type="text"
+                            placeholder="昵称（选填，排行榜显示）"
+                            className="input-field"
+                            value={nickname}
+                            onChange={(e) => setNickname(e.target.value)}
+                            maxLength={20}
                         />
                     </div>
                     <div>

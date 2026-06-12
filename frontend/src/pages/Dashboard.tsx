@@ -160,7 +160,7 @@ const Dashboard: React.FC = () => {
             <header className="flex justify-between items-center mb-8 max-w-6xl mx-auto">
                 <div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-                        你好, {user?.username}
+                        你好, {user?.nickname || user?.username}
                     </h1>
                     <p className="text-text-muted">当前词汇量: <span className="text-text-primary font-bold">{user?.vocab_size}</span> 词</p>
                 </div>

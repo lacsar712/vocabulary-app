@@ -24,11 +24,11 @@ const authenticate = (req, res, next) => {
 
 // Auth Routes
 app.post('/api/register', (req, res) => {
-    const { username, password } = req.body;
+    const { username, password, nickname } = req.body;
     const hash = bcrypt.hashSync(password, 10);
-    db.run("INSERT INTO users (username, password_hash) VALUES (?, ?)", [username, hash], function (err) {
+    db.run("INSERT INTO users (username, password_hash, nickname) VALUES (?, ?, ?)", [username, hash, nickname || null], function (err) {
         if (err) return res.status(400).json({ error: "用户名已存在" });
-        res.json({ id: this.lastID, username, vocab_size: 0, onboarding_completed: 0 });
+        res.json({ id: this.lastID, username, nickname: nickname || null, vocab_size: 0, onboarding_completed: 0 });
     });
 });
 
@@ -42,6 +42,7 @@ app.post('/api/login', (req, res) => {
             user: {
                 id: user.id,
                 username: user.username,
+                nickname: user.nickname || null,
                 vocab_size: user.vocab_size,
                 onboarding_completed: user.onboarding_completed || 0
             }
@@ -55,8 +56,27 @@ function applyPasswordCheck(password, user) {
 
 // User Profile
 app.get('/api/me', authenticate, (req, res) => {
-    db.get("SELECT id, username, vocab_size, onboarding_completed, created_at FROM users WHERE id = ?", [req.user.id], (err, row) => {
+    db.get("SELECT id, username, nickname, vocab_size, onboarding_completed, created_at FROM users WHERE id = ?", [req.user.id], (err, row) => {
         res.json(row);
+    });
+});
+
+app.put('/api/me/nickname', authenticate, (req, res) => {
+    const { nickname } = req.body;
+    if (nickname === undefined) return res.status(400).json({ error: "缺少 nickname 参数" });
+
+    const cleanNickname = nickname && nickname.trim() ? nickname.trim() : null;
+
+    if (cleanNickname && cleanNickname.length > 20) {
+        return res.status(400).json({ error: "昵称长度不能超过20个字符" });
+    }
+
+    db.run("UPDATE users SET nickname = ? WHERE id = ?", [cleanNickname, req.user.id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get("SELECT id, username, nickname, vocab_size, onboarding_completed FROM users WHERE id = ?", [req.user.id], (err2, row) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ success: true, user: row });
+        });
     });
 });
 
@@ -1180,7 +1200,7 @@ app.get('/api/leaderboard', authenticate, (req, res) => {
         : "lh.updated_at >= datetime('now', '-7 days')";
 
     const leaderboardSql = `
-        SELECT u.id, u.username, u.vocab_size,
+        SELECT u.id, u.username, u.nickname, u.vocab_size,
                COUNT(lh.id) as mastered_count,
                RANK() OVER (ORDER BY COUNT(lh.id) DESC) as rank
         FROM users u
@@ -1200,7 +1220,7 @@ app.get('/api/leaderboard', authenticate, (req, res) => {
         }
 
         const currentUserSql = `
-            SELECT u.id, u.username, u.vocab_size,
+            SELECT u.id, u.username, u.nickname, u.vocab_size,
                    COUNT(lh.id) as mastered_count,
                    (SELECT COUNT(*) + 1 FROM (
                        SELECT COUNT(lh2.id) as cnt
@@ -1776,6 +1796,22 @@ app.get('/api/synonym/hot-groups', authenticate, (req, res) => {
     `, [limit], (err, groups) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ groups });
+    });
+});
+
+
+app.put('/api/profile/nickname', authenticate, (req, res) => {
+    const { nickname } = req.body;
+    if (!nickname || typeof nickname !== 'string' || nickname.trim().length === 0) {
+        return res.status(400).json({ error: '昵称不能为空' });
+    }
+    if (nickname.trim().length > 20) {
+        return res.status(400).json({ error: '昵称长度不能超过20个字符' });
+    }
+    const trimmed = nickname.trim();
+    db.run("UPDATE users SET nickname = ? WHERE id = ?", [trimmed, req.user.id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, nickname: trimmed });
     });
 });
 

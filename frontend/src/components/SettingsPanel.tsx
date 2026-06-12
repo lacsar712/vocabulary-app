@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Settings, Palette, User, Shield, Bell, ChevronRight, BookOpen } from 'lucide-react';
+import { X, Settings, Palette, User, Shield, Bell, ChevronRight, BookOpen, Pencil, Check, X as XIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeSelector } from './ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
@@ -27,14 +27,43 @@ const sections: SettingSection[] = [
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
     const [activeSection, setActiveSection] = useState<string>('appearance');
-    const { user, resetOnboarding } = useAuth();
+    const { user, resetOnboarding, updateNickname } = useAuth();
     const { themeLabel, resetToSystem } = useTheme();
     const navigate = useNavigate();
+    const [editingNickname, setEditingNickname] = useState(false);
+    const [nicknameInput, setNicknameInput] = useState('');
+    const [nicknameError, setNicknameError] = useState('');
 
     const handleReplayOnboarding = async () => {
         await resetOnboarding();
         onClose();
         navigate('/onboarding');
+    };
+
+    const startEditNickname = () => {
+        setNicknameInput(user?.nickname || '');
+        setNicknameError('');
+        setEditingNickname(true);
+    };
+
+    const cancelEditNickname = () => {
+        setEditingNickname(false);
+        setNicknameError('');
+    };
+
+    const saveNickname = async () => {
+        const trimmed = nicknameInput.trim();
+        if (trimmed.length > 20) {
+            setNicknameError('昵称长度不能超过20个字符');
+            return;
+        }
+        try {
+            await updateNickname(trimmed || null);
+            setEditingNickname(false);
+            setNicknameError('');
+        } catch (e: any) {
+            setNicknameError(e?.response?.data?.error || '保存失败，请重试');
+        }
     };
 
     const renderSectionContent = () => {
@@ -128,10 +157,54 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose })
                         <div className="glass-panel rounded-2xl p-5 space-y-4">
                             <div className="flex items-center gap-4">
                                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-2xl font-bold text-white">
-                                    {user?.username?.charAt(0).toUpperCase() || '?'}
+                                    {(user?.nickname || user?.username || '?').charAt(0).toUpperCase()}
                                 </div>
-                                <div>
-                                    <div className="text-lg font-bold text-text-primary">{user?.username}</div>
+                                <div className="flex-1 min-w-0">
+                                    {editingNickname ? (
+                                        <div className="space-y-2">
+                                            <input
+                                                type="text"
+                                                value={nicknameInput}
+                                                onChange={(e) => setNicknameInput(e.target.value)}
+                                                maxLength={20}
+                                                placeholder="输入昵称"
+                                                autoFocus
+                                                className="w-full bg-surface/50 border border-border-strong rounded-lg px-3 py-2 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                                            />
+                                            {nicknameError && (
+                                                <p className="text-xs text-red-400">{nicknameError}</p>
+                                            )}
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={saveNickname}
+                                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/20 text-primary text-xs font-medium hover:bg-primary/30 transition cursor-pointer"
+                                                >
+                                                    <Check size={14} />
+                                                    保存
+                                                </button>
+                                                <button
+                                                    onClick={cancelEditNickname}
+                                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface/50 text-text-muted text-xs font-medium hover:bg-surface-hover transition cursor-pointer"
+                                                >
+                                                    <XIcon size={14} />
+                                                    取消
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-lg font-bold text-text-primary truncate">
+                                                {user?.nickname || user?.username}
+                                            </div>
+                                            <button
+                                                onClick={startEditNickname}
+                                                className="p-1 rounded hover:bg-surface-hover text-text-muted hover:text-text-primary transition cursor-pointer"
+                                                title="编辑昵称"
+                                            >
+                                                <Pencil size={14} />
+                                            </button>
+                                        </div>
+                                    )}
                                     <div className="text-sm text-text-muted">
                                         当前词汇量: <span className="font-semibold text-primary">{user?.vocab_size || 0}</span>
                                     </div>
@@ -139,6 +212,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose })
                             </div>
                             <div className="h-px bg-border-default" />
                             <div className="grid grid-cols-2 gap-4 text-sm mb-5">
+                                <div>
+                                    <div className="text-text-muted mb-1">用户名</div>
+                                    <div className="text-text-primary font-mono">{user?.username}</div>
+                                </div>
                                 <div>
                                     <div className="text-text-muted mb-1">用户ID</div>
                                     <div className="text-text-primary font-mono">#{user?.id}</div>

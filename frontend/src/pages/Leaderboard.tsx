@@ -9,6 +9,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 interface LeaderboardEntry {
     id: number;
     username: string;
+    nickname: string | null;
     vocab_size: number;
     mastered_count: number;
     rank: number;
@@ -18,6 +19,8 @@ const periodLabels: Record<string, string> = {
     week: '本周',
     month: '本月',
 };
+
+const getDisplayName = (entry: LeaderboardEntry) => entry.nickname || entry.username;
 
 const Leaderboard: React.FC = () => {
     const { user } = useAuth();
@@ -126,7 +129,7 @@ const Leaderboard: React.FC = () => {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <span className="text-text-primary font-semibold truncate">
-                                            {entry.username}
+                                            {getDisplayName(entry)}
                                         </span>
                                         {isUserInList(entry) && (
                                             <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-medium">
@@ -168,7 +171,7 @@ const Leaderboard: React.FC = () => {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                             <span className="text-text-primary font-semibold truncate">
-                                                {currentUser.username}
+                                                {getDisplayName(currentUser)}
                                             </span>
                                             <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-medium">
                                                 我
