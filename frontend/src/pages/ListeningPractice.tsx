@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import { Headphones, Volume2, VolumeX, Check, X, ArrowRight, Home, Trophy, Clock, Target, RefreshCw, Info, Zap, Flame, ChevronRight, Gauge, Book } from 'lucide-react';
+import { Headphones, Volume2, Check, X, ArrowRight, Home, Trophy, Clock, Target, RefreshCw, Info, Zap, Flame, ChevronRight, Gauge, Book } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -424,7 +424,7 @@ const ListeningPractice: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                         <div className="bg-card-bg p-4 rounded-xl text-center">
                             <div className="text-3xl font-bold text-primary mb-1">{score}</div>
                             <div className="text-xs text-text-muted">总得分</div>
@@ -436,6 +436,10 @@ const ListeningPractice: React.FC = () => {
                         <div className="bg-card-bg p-4 rounded-xl text-center">
                             <div className="text-3xl font-bold text-accent mb-1">{avgReaction}s</div>
                             <div className="text-xs text-text-muted">平均反应</div>
+                        </div>
+                        <div className="bg-card-bg p-4 rounded-xl text-center">
+                            <div className="text-3xl font-bold text-teal-400 mb-1">{formatTime(totalTime)}</div>
+                            <div className="text-xs text-text-muted">总用时</div>
                         </div>
                         <div className="bg-card-bg p-4 rounded-xl text-center">
                             <div className="text-3xl font-bold text-orange-400 mb-1">{maxStreak}</div>

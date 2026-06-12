@@ -647,15 +647,11 @@ db.serialize(() => {
                     VALUES (?, ?, ?)
                 `);
 
-                SYNONYM_GROUPS.forEach((group, gi) => {
-                    sgStmt.run(group.name, group.description, function(err) {
-                        if (err) { console.error('Error inserting synonym group:', err); return; }
-                        const groupId = this.lastID;
-                        group.members.forEach(m => {
-                            sgmStmt.run(groupId, m.usage_diff, m.word, (err2) => {
-                                if (err2) console.error('Error inserting synonym group member:', err2);
-                            });
-                        });
+                SYNONYM_GROUPS.forEach((group) => {
+                    sgStmt.run(group.name, group.description);
+                    const groupId = sgStmt.lastID;
+                    group.members.forEach(m => {
+                        sgmStmt.run(groupId, m.usage_diff, m.word);
                     });
                 });
                 sgStmt.finalize();
