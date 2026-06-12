@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { Volume2, Star, ArrowLeft, Plus, Check, Bookmark, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 interface Theme {
     id: number;
@@ -214,32 +215,35 @@ const ThemeLearning: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 p-4 md:p-8">
+        <div className="min-h-screen bg-page p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
                 <header className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => navigate('/')}
-                            className="p-2 rounded-full bg-slate-800 border border-slate-700 hover:bg-slate-700 transition cursor-pointer"
+                            className="p-2 rounded-full bg-surface border border-border-default hover:bg-surface-hover transition cursor-pointer"
                         >
-                            <ArrowLeft size={20} className="text-slate-300" />
+                            <ArrowLeft size={20} className="text-text-secondary" />
                         </button>
                         <div>
                             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
                                 主题学习
                             </h1>
-                            <p className="text-slate-400 text-sm mt-1">
+                            <p className="text-text-muted text-sm mt-1">
                                 按主题方向浏览单词，选择最多2个主题进行交叉学习
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={() => setShowPrefModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 text-slate-200 hover:from-primary/30 hover:to-secondary/30 transition cursor-pointer"
-                    >
-                        <Bookmark size={16} />
-                        <span className="text-sm font-semibold">设定学习方向</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <ThemeToggle />
+                        <button
+                            onClick={() => setShowPrefModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 text-text-secondary hover:from-primary/30 hover:to-secondary/30 transition cursor-pointer"
+                        >
+                            <Bookmark size={16} />
+                            <span className="text-sm font-semibold">设定学习方向</span>
+                        </button>
+                    </div>
                 </header>
 
                 <div className="mb-6">
@@ -255,7 +259,7 @@ const ThemeLearning: React.FC = () => {
                                     className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-sm font-semibold transition-all cursor-pointer relative ${
                                         isSelected
                                             ? `${style.bg} ${style.border} ${style.text} shadow-lg`
-                                            : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-700/50 hover:text-slate-300'
+                                            : 'bg-card-bg border-border-default text-text-muted hover:bg-surface-hover/50 hover:text-text-secondary'
                                     }`}
                                 >
                                     <span>{theme.icon}</span>
@@ -272,7 +276,7 @@ const ThemeLearning: React.FC = () => {
                     </div>
                     {selectedThemes.length > 0 && (
                         <div className="mt-3 flex items-center gap-2 flex-wrap">
-                            <span className="text-xs text-slate-500">已选主题：</span>
+                            <span className="text-xs text-text-faint">已选主题：</span>
                             {selectedThemes.map(id => {
                                 const t = themes.find(th => th.id === id);
                                 if (!t) return null;
@@ -290,7 +294,7 @@ const ThemeLearning: React.FC = () => {
                             )}
                             <button
                                 onClick={() => setSelectedThemes([])}
-                                className="text-xs text-slate-500 hover:text-slate-300 ml-2 underline"
+                                className="text-xs text-text-faint hover:text-text-secondary ml-2 underline"
                             >
                                 清除筛选
                             </button>
@@ -301,7 +305,7 @@ const ThemeLearning: React.FC = () => {
                 <div className="flex flex-col lg:flex-row gap-8">
                     <div className="lg:w-64 flex-shrink-0 order-2 lg:order-1">
                         <div className="glass-panel p-6 rounded-2xl sticky top-8">
-                            <h2 className="text-lg font-bold text-white mb-4">主题词库统计</h2>
+                            <h2 className="text-lg font-bold text-text-primary mb-4">主题词库统计</h2>
                             <div className="space-y-3">
                                 {themes.map(theme => {
                                     const style = getThemeStyle(theme.key);
@@ -315,20 +319,20 @@ const ThemeLearning: React.FC = () => {
                                             className={`p-3 rounded-xl border transition-all ${
                                                 selectedThemes.includes(theme.id)
                                                     ? `${style.bg} ${style.border}`
-                                                    : 'bg-slate-800/30 border-slate-700/50'
+                                                    : 'bg-surface/30 border-card-border'
                                             }`}
                                         >
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
+                                                <span className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">
                                                     <span>{theme.icon}</span>
                                                     {theme.name}
                                                     {isPreferred && (
                                                         <span className="text-[10px] text-accent">★</span>
                                                     )}
                                                 </span>
-                                                <span className="text-xs text-slate-400">{progress}%</span>
+                                                <span className="text-xs text-text-muted">{progress}%</span>
                                             </div>
-                                            <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden mb-1.5">
+                                            <div className="w-full h-1.5 bg-surface-hover rounded-full overflow-hidden mb-1.5">
                                                 <div
                                                     className="h-full rounded-full transition-all duration-500"
                                                     style={{
@@ -337,7 +341,7 @@ const ThemeLearning: React.FC = () => {
                                                     }}
                                                 />
                                             </div>
-                                            <div className="flex justify-between text-xs text-slate-500">
+                                            <div className="flex justify-between text-xs text-text-faint">
                                                 <span>已掌握 {theme.mastered_count}</span>
                                                 <span>共 {theme.word_count} 词</span>
                                             </div>
@@ -347,8 +351,8 @@ const ThemeLearning: React.FC = () => {
                             </div>
 
                             {preferences.length > 0 && (
-                                <div className="mt-6 pt-4 border-t border-slate-700">
-                                    <h3 className="text-sm font-semibold text-slate-400 mb-2">当前学习方向</h3>
+                                <div className="mt-6 pt-4 border-t border-border-default">
+                                    <h3 className="text-sm font-semibold text-text-muted mb-2">当前学习方向</h3>
                                     <div className="flex flex-wrap gap-1.5">
                                         {preferences.map(id => {
                                             const t = themes.find(th => th.id === id);
@@ -372,21 +376,21 @@ const ThemeLearning: React.FC = () => {
                         {selectedThemes.length === 0 ? (
                             <div className="glass-panel rounded-2xl p-16 text-center">
                                 <div className="text-6xl mb-4">🏷️</div>
-                                <h2 className="text-2xl font-bold text-white mb-3">选择主题开始学习</h2>
-                                <p className="text-slate-400 max-w-md mx-auto">
+                                <h2 className="text-2xl font-bold text-text-primary mb-3">选择主题开始学习</h2>
+                                <p className="text-text-muted max-w-md mx-auto">
                                     点击上方的主题胶囊标签，浏览该主题下的单词。你可以同时选择最多2个主题进行交叉学习。
                                 </p>
                             </div>
                         ) : loading ? (
-                            <div className="text-center py-12 text-slate-400">加载中...</div>
+                            <div className="text-center py-12 text-text-muted">加载中...</div>
                         ) : words.length === 0 ? (
-                            <div className="text-center py-12 text-slate-400 glass-panel rounded-2xl">
+                            <div className="text-center py-12 text-text-muted glass-panel rounded-2xl">
                                 <Star size={48} className="mx-auto mb-4 opacity-30" />
                                 <p>没有找到匹配的单词</p>
                             </div>
                         ) : (
                             <>
-                                <div className="text-sm text-slate-400 mb-4">
+                                <div className="text-sm text-text-muted mb-4">
                                     共 {pagination?.total || 0} 个单词 · 下滑加载更多
                                 </div>
 
@@ -402,7 +406,7 @@ const ThemeLearning: React.FC = () => {
                                                 className={`glass-panel rounded-2xl overflow-hidden cursor-pointer transition-all relative ${
                                                     expandedCardId === word.id
                                                         ? 'ring-2 ring-primary/50 md:col-span-2'
-                                                        : 'hover:bg-slate-800/80'
+                                                        : 'hover:bg-surface/80'
                                                 }`}
                                                 onClick={() => setExpandedCardId(prev => prev === word.id ? null : word.id)}
                                             >
@@ -424,10 +428,10 @@ const ThemeLearning: React.FC = () => {
                                                     <div className="flex items-start justify-between">
                                                         <div className="flex-1 pr-16">
                                                             <div className="flex items-baseline gap-3 mb-1">
-                                                                <h3 className="text-xl font-bold text-white">
+                                                                <h3 className="text-xl font-bold text-text-primary">
                                                                     {word.word}
                                                                 </h3>
-                                                                <span className="text-slate-400 italic font-serif text-sm">
+                                                                <span className="text-text-muted italic font-serif text-sm">
                                                                     {word.pos}
                                                                 </span>
                                                             </div>
@@ -454,7 +458,7 @@ const ThemeLearning: React.FC = () => {
                                                                 className={`p-1.5 rounded-full transition-all ${
                                                                     word.in_study_plan
                                                                         ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                                                                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                                                                        : 'bg-surface-hover text-text-muted hover:bg-slate-600 hover:text-text-primary'
                                                                 }`}
                                                                 title={word.in_study_plan ? '从学习计划移除' : '加入学习计划'}
                                                             >
@@ -463,14 +467,14 @@ const ThemeLearning: React.FC = () => {
                                                         </div>
                                                     </div>
 
-                                                    <p className="text-slate-200 text-sm mt-3 line-clamp-2">{word.definition}</p>
+                                                    <p className="text-text-secondary text-sm mt-3 line-clamp-2">{word.definition}</p>
 
                                                     <div className="mt-2 flex items-center justify-between">
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-[10px] text-slate-500">常用度</span>
+                                                            <span className="text-[10px] text-text-faint">常用度</span>
                                                             {renderFrequencyDots(word.frequency)}
                                                         </div>
-                                                        <span className="text-[10px] text-slate-500">点击查看例句</span>
+                                                        <span className="text-[10px] text-text-faint">点击查看例句</span>
                                                     </div>
 
                                                     <AnimatePresence>
@@ -481,14 +485,14 @@ const ThemeLearning: React.FC = () => {
                                                                 exit={{ height: 0, opacity: 0 }}
                                                                 className="overflow-hidden"
                                                             >
-                                                                <div className="mt-4 pt-4 border-t border-slate-700">
-                                                                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                                                                <div className="mt-4 pt-4 border-t border-border-default">
+                                                                    <h4 className="text-xs font-bold text-text-faint uppercase tracking-widest mb-2">
                                                                         例句
                                                                     </h4>
-                                                                    <p className="text-indigo-200 italic font-serif text-base">
+                                                                    <p className="text-primary/80 italic font-serif text-base">
                                                                         "{word.example}"
                                                                     </p>
-                                                                    <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                                                                    <div className="mt-3 flex items-center justify-between text-xs text-text-faint">
                                                                         <span>难度等级: {word.difficulty_level}</span>
                                                                         <span>词频排名: #{word.rank}</span>
                                                                     </div>
@@ -504,13 +508,13 @@ const ThemeLearning: React.FC = () => {
 
                                 <div ref={observerRef} className="h-20 flex items-center justify-center mt-8">
                                     {loadingMore && (
-                                        <div className="flex items-center gap-2 text-slate-400">
+                                        <div className="flex items-center gap-2 text-text-muted">
                                             <Loader2 size={20} className="animate-spin" />
                                             <span>加载更多...</span>
                                         </div>
                                     )}
                                     {pagination && pagination.page >= pagination.totalPages && !loadingMore && words.length > 0 && (
-                                        <p className="text-slate-500 text-sm">— 已加载全部 —</p>
+                                        <p className="text-text-faint text-sm">— 已加载全部 —</p>
                                     )}
                                 </div>
                             </>
@@ -521,14 +525,14 @@ const ThemeLearning: React.FC = () => {
 
             {showPrefModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowPrefModal(false)}>
-                    <div className="glass-panel bg-slate-900 p-6 rounded-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+                    <div className="glass-panel bg-page p-6 rounded-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-white">设定学习方向</h2>
-                            <button onClick={() => setShowPrefModal(false)} className="text-slate-400 hover:text-white">
+                            <h2 className="text-2xl font-bold text-text-primary">设定学习方向</h2>
+                            <button onClick={() => setShowPrefModal(false)} className="text-text-muted hover:text-text-primary">
                                 <X size={20} />
                             </button>
                         </div>
-                        <p className="text-slate-400 text-sm mb-4">
+                        <p className="text-text-muted text-sm mb-4">
                             选择你当前重点学习的主题方向（最多2个），主页推荐将优先推送该主题范围内的单词。
                         </p>
                         <div className="grid grid-cols-2 gap-3 mb-6">
@@ -542,11 +546,11 @@ const ThemeLearning: React.FC = () => {
                                         className={`flex items-center gap-3 p-4 rounded-xl border transition-all text-left ${
                                             isSelected
                                                 ? `${style.bg} ${style.border} ${style.text}`
-                                                : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700/50'
+                                                : 'bg-card-bg border-border-default text-text-secondary hover:bg-surface-hover/50'
                                         }`}
                                     >
                                         <div className={`w-5 h-5 rounded flex items-center justify-center ${
-                                            isSelected ? 'bg-white/20' : 'bg-slate-700'
+                                            isSelected ? 'bg-white/20' : 'bg-surface-hover'
                                         }`}>
                                             {isSelected && <Check size={14} />}
                                         </div>

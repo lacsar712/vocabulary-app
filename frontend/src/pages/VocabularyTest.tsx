@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { X, HelpCircle, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 interface Word {
     id: number;
@@ -123,7 +124,10 @@ const VocabularyTest: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex items-center justify-center min-h-screen bg-page">
+                <div className="fixed top-4 right-4 z-50">
+                    <ThemeToggle />
+                </div>
                 <div className="text-primary text-xl font-bold animate-pulse">
                     测试加载中...
                 </div>
@@ -133,30 +137,33 @@ const VocabularyTest: React.FC = () => {
 
     if (completed && result) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen p-6">
+            <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-page">
+                <div className="fixed top-4 right-4 z-50">
+                    <ThemeToggle />
+                </div>
                 <div className="glass-panel p-10 rounded-2xl text-center max-w-lg w-full animate-fade-in-up">
                     <h2 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
                         测试完成！
                     </h2>
-                    <p className="text-slate-300 text-lg mb-4">您的预估词汇量为:</p>
-                    <div className="text-6xl font-extrabold text-white mb-4 drop-shadow-lg">
+                    <p className="text-text-secondary text-lg mb-4">您的预估词汇量为:</p>
+                    <div className="text-6xl font-extrabold text-text-primary mb-4 drop-shadow-lg">
                         {result.vocab_size}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 mb-8 text-sm">
-                        <div className="bg-slate-800/50 p-4 rounded-xl">
-                            <div className="text-slate-400">正确率</div>
+                        <div className="bg-card-bg p-4 rounded-xl">
+                            <div className="text-text-muted">正确率</div>
                             <div className="text-2xl font-bold text-emerald-400">{result.accuracy}%</div>
                         </div>
-                        <div className="bg-slate-800/50 p-4 rounded-xl">
-                            <div className="text-slate-400">答对题数</div>
+                        <div className="bg-card-bg p-4 rounded-xl">
+                            <div className="text-text-muted">答对题数</div>
                             <div className="text-2xl font-bold text-primary">
                                 {result.correct_count}/{result.total_questions}
                             </div>
                         </div>
                     </div>
 
-                    <p className="text-slate-400 mb-8">准备好扩展您的词库了吗？</p>
+                    <p className="text-text-muted mb-8">准备好扩展您的词库了吗？</p>
                     <button
                         onClick={() => navigate('/')}
                         className="btn-primary w-full flex items-center justify-center gap-2"
@@ -170,7 +177,10 @@ const VocabularyTest: React.FC = () => {
 
     if (!currentWord) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex items-center justify-center min-h-screen bg-page">
+                <div className="fixed top-4 right-4 z-50">
+                    <ThemeToggle />
+                </div>
                 <div className="text-primary text-xl font-bold animate-pulse">
                     准备下一题...
                 </div>
@@ -182,13 +192,18 @@ const VocabularyTest: React.FC = () => {
     const correctCount = answers.filter(a => a.isCorrect).length;
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-900">
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-page">
             {/* Progress Bar */}
-            <div className="fixed top-0 left-0 w-full h-2 bg-slate-800">
+            <div className="fixed top-0 left-0 w-full h-2 progress-track">
                 <div
                     className="h-full bg-primary transition-all duration-500"
                     style={{ width: `${progress}%` }}
                 />
+            </div>
+
+            {/* Theme Toggle */}
+            <div className="fixed top-4 right-4 z-50">
+                <ThemeToggle />
             </div>
 
             {/* Ability Trend Indicator */}
@@ -229,7 +244,7 @@ const VocabularyTest: React.FC = () => {
                         className="glass-panel p-8 md:p-12 rounded-3xl w-full min-h-[400px] flex flex-col items-center justify-center text-center shadow-2xl"
                     >
                         <div className="flex items-center gap-4 mb-4">
-                            <span className="text-slate-400 text-sm font-semibold tracking-wider uppercase">
+                            <span className="text-text-muted text-sm font-semibold tracking-wider uppercase">
                                 单词 {answers.length + 1} / {TOTAL_QUESTIONS}
                             </span>
                             <span className="text-emerald-400 text-sm">
@@ -237,13 +252,13 @@ const VocabularyTest: React.FC = () => {
                             </span>
                         </div>
 
-                        <h2 className="text-5xl md:text-6xl font-bold text-white mb-12">
+                        <h2 className="text-5xl md:text-6xl font-bold text-text-primary mb-12">
                             {currentWord.word}
                         </h2>
 
                         {!showDefinition ? (
                             <div className="space-y-6 w-full max-w-md">
-                                <p className="text-slate-300 mb-8">您认识这个单词吗？</p>
+                                <p className="text-text-secondary mb-8">您认识这个单词吗？</p>
                                 <div className="grid grid-cols-2 gap-4">
                                     <button
                                         onClick={() => handleAnswer(false)}
@@ -263,11 +278,11 @@ const VocabularyTest: React.FC = () => {
                             </div>
                         ) : (
                             <div className="w-full animate-fade-in-up">
-                                <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700 mb-8">
+                                <div className="bg-card-bg p-6 rounded-xl border border-border-default mb-8">
                                     <h3 className="text-lg font-semibold text-primary mb-2">释义</h3>
-                                    <p className="text-xl text-slate-200">{currentWord.definition}</p>
+                                    <p className="text-xl text-text-secondary">{currentWord.definition}</p>
                                 </div>
-                                <p className="text-slate-300 mb-6">您刚才想对了吗？</p>
+                                <p className="text-text-secondary mb-6">您刚才想对了吗？</p>
                                 <div className="grid grid-cols-2 gap-4">
                                     <button
                                         onClick={() => handleAnswer(false)}

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { Volume2, SkipForward, Check, X, ArrowRight, Home, Trophy, Clock, Target, RefreshCw, Info } from 'lucide-react';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ChallengeWord {
@@ -231,7 +232,10 @@ const SpellingChallenge: React.FC = () => {
 
     if (gamePhase === 'rules') {
         return (
-            <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center p-6 bg-page">
+                <div className="fixed top-4 right-4 z-50">
+                    <ThemeToggle />
+                </div>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -244,15 +248,15 @@ const SpellingChallenge: React.FC = () => {
                         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent mb-2">
                             听音拼写挑战
                         </h1>
-                        <p className="text-slate-400">测试你的单词拼写能力</p>
+                        <p className="text-text-muted">测试你的单词拼写能力</p>
                     </div>
 
                     <div className="space-y-4 mb-8">
-                        <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
+                        <div className="flex items-start gap-3 p-4 bg-card-bg rounded-xl">
                             <Info size={20} className="text-primary flex-shrink-0 mt-0.5" />
                             <div>
-                                <h3 className="font-semibold text-white mb-1">游戏规则</h3>
-                                <ul className="text-slate-300 text-sm space-y-1">
+                                <h3 className="font-semibold text-text-primary mb-1">游戏规则</h3>
+                                <ul className="text-text-secondary text-sm space-y-1">
                                     <li>• 每局共 {TOTAL_QUESTIONS} 道题，题目难度贴合你的词汇量</li>
                                     <li>• 系统会朗读单词发音，同时给出中文释义</li>
                                     <li>• 在输入框中拼写正确的英文单词</li>
@@ -263,11 +267,11 @@ const SpellingChallenge: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
+                        <div className="flex items-start gap-3 p-4 bg-card-bg rounded-xl">
                             <Target size={20} className="text-accent flex-shrink-0 mt-0.5" />
                             <div>
-                                <h3 className="font-semibold text-white mb-1">得分规则</h3>
-                                <p className="text-slate-300 text-sm">
+                                <h3 className="font-semibold text-text-primary mb-1">得分规则</h3>
+                                <p className="text-text-secondary text-sm">
                                     满分 1000 分，根据正确率计算得分。挑战结束后会显示你的总用时和详细答题情况。
                                 </p>
                             </div>
@@ -295,7 +299,10 @@ const SpellingChallenge: React.FC = () => {
 
     if (gamePhase === 'result') {
         return (
-            <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900">
+            <div className="min-h-screen flex items-center justify-center p-6 bg-page">
+                <div className="fixed top-4 right-4 z-50">
+                    <ThemeToggle />
+                </div>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -305,27 +312,27 @@ const SpellingChallenge: React.FC = () => {
                         <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                             <Trophy size={40} className="text-white" />
                         </div>
-                        <h1 className="text-3xl font-bold text-white mb-2">挑战完成！</h1>
-                        <p className="text-slate-400">来看看你的表现吧</p>
+                        <h1 className="text-3xl font-bold text-text-primary mb-2">挑战完成！</h1>
+                        <p className="text-text-muted">来看看你的表现吧</p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4 mb-8">
-                        <div className="bg-slate-800/50 p-4 rounded-xl text-center">
+                        <div className="bg-card-bg p-4 rounded-xl text-center">
                             <div className="text-3xl font-bold text-primary mb-1">{score}</div>
-                            <div className="text-xs text-slate-400">得分</div>
+                            <div className="text-xs text-text-muted">得分</div>
                         </div>
-                        <div className="bg-slate-800/50 p-4 rounded-xl text-center">
+                        <div className="bg-card-bg p-4 rounded-xl text-center">
                             <div className="text-3xl font-bold text-emerald-400 mb-1">{correctCount}/{TOTAL_QUESTIONS}</div>
-                            <div className="text-xs text-slate-400">正确率</div>
+                            <div className="text-xs text-text-muted">正确率</div>
                         </div>
-                        <div className="bg-slate-800/50 p-4 rounded-xl text-center">
+                        <div className="bg-card-bg p-4 rounded-xl text-center">
                             <div className="text-3xl font-bold text-accent mb-1">{formatTime(totalTime)}</div>
-                            <div className="text-xs text-slate-400">用时</div>
+                            <div className="text-xs text-text-muted">用时</div>
                         </div>
                     </div>
 
                     <div className="mb-8">
-                        <h3 className="font-semibold text-white mb-4">答题详情</h3>
+                        <h3 className="font-semibold text-text-primary mb-4">答题详情</h3>
                         <div className="space-y-2 max-h-64 overflow-y-auto">
                             {answers.map((answer, index) => (
                                 <motion.div
@@ -344,16 +351,16 @@ const SpellingChallenge: React.FC = () => {
                                             {answer.isCorrect ? <Check size={14} /> : <X size={14} />}
                                         </div>
                                         <div>
-                                            <div className="font-mono font-semibold text-white">{answer.word}</div>
+                                            <div className="font-mono font-semibold text-text-primary">{answer.word}</div>
                                             {!answer.isCorrect && answer.userAnswer !== '(跳过)' && (
                                                 <div className="text-xs text-red-400">你的答案: {answer.userAnswer}</div>
                                             )}
                                             {answer.userAnswer === '(跳过)' && (
-                                                <div className="text-xs text-slate-500">已跳过</div>
+                                                <div className="text-xs text-text-faint">已跳过</div>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="text-xs text-slate-500">
+                                    <div className="text-xs text-text-faint">
                                         <Clock size={12} className="inline mr-1" />
                                         {answer.timeSpent}s
                                     </div>
@@ -382,22 +389,26 @@ const SpellingChallenge: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-900">
-            <div className="fixed top-0 left-0 w-full h-2 bg-slate-800">
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-page">
+            <div className="fixed top-0 left-0 w-full h-2 progress-track">
                 <div
                     className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
                     style={{ width: `${((currentIndex + (showResult ? 1 : 0)) / TOTAL_QUESTIONS) * 100}%` }}
                 />
             </div>
 
+            <div className="fixed top-6 right-6 z-50">
+                <ThemeToggle />
+            </div>
+
             <div className="fixed top-6 left-6 flex items-center gap-4">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/80 backdrop-blur">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface/80 backdrop-blur">
                     <Target size={16} className="text-primary" />
-                    <span className="text-sm font-semibold text-white">
+                    <span className="text-sm font-semibold text-text-primary">
                         {currentIndex + 1} / {TOTAL_QUESTIONS}
                     </span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/80 backdrop-blur">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface/80 backdrop-blur">
                     <Check size={16} className="text-emerald-400" />
                     <span className="text-sm font-semibold text-emerald-400">{correctCount}</span>
                 </div>
@@ -422,12 +433,12 @@ const SpellingChallenge: React.FC = () => {
                                         >
                                             <Volume2 size={40} className="text-white" />
                                         </button>
-                                        <p className="text-slate-400 text-sm mb-2">点击播放发音</p>
+                                        <p className="text-text-muted text-sm mb-2">点击播放发音</p>
 
-                                        <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700/50 mb-6">
+                                        <div className="bg-card-bg p-6 rounded-xl border border-card-border mb-6">
                                             <h3 className="text-sm font-semibold text-primary mb-2">中文释义</h3>
-                                            <p className="text-2xl text-white font-medium">{currentWord.definition}</p>
-                                            <p className="text-sm text-slate-500 mt-2">词性: {currentWord.pos}</p>
+                                            <p className="text-2xl text-text-primary font-medium">{currentWord.definition}</p>
+                                            <p className="text-sm text-text-faint mt-2">词性: {currentWord.pos}</p>
                                         </div>
                                     </div>
 
@@ -490,12 +501,12 @@ const SpellingChallenge: React.FC = () => {
                                         </div>
 
                                         <div className="text-center">
-                                            <p className="text-slate-400 text-sm mb-2">正确答案</p>
+                                            <p className="text-text-muted text-sm mb-2">正确答案</p>
                                             <div className="flex items-center justify-center gap-3 mb-2">
-                                                <span className="text-3xl font-bold text-white font-mono">{currentWord.word}</span>
+                                                <span className="text-3xl font-bold text-text-primary font-mono">{currentWord.word}</span>
                                                 <button
                                                     onClick={() => playAudio(currentWord.word)}
-                                                    className="p-2 rounded-full bg-slate-700 hover:bg-slate-600 transition"
+                                                    className="p-2 rounded-full bg-surface hover:bg-surface-hover transition"
                                                 >
                                                     <Volume2 size={18} className="text-primary" />
                                                 </button>

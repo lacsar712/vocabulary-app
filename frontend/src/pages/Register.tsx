@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
 import { UserPlus } from 'lucide-react';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 const Register: React.FC = () => {
     const [username, setUsername] = useState('');
@@ -21,15 +22,18 @@ const Register: React.FC = () => {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-[url('https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=2071&auto=format&fit=crop')] bg-cover bg-center">
-            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm"></div>
+            <div className="absolute inset-0 auth-overlay backdrop-blur-sm"></div>
             <div className="relative z-10 glass-panel p-8 rounded-2xl w-full max-w-md animate-fade-in-up">
+                <div className="flex justify-end mb-2">
+                    <ThemeToggle size={18} />
+                </div>
                 <div className="flex justify-center mb-6">
                     <div className="p-4 bg-gradient-to-br from-accent to-secondary rounded-full shadow-lg shadow-accent/30">
-                        <UserPlus size={40} className="text-white" />
+                        <UserPlus size={40} className="text-text-primary" />
                     </div>
                 </div>
                 <h2 className="text-3xl font-bold text-center mb-2 bg-clip-text text-transparent bg-gradient-to-r from-pink-300 to-purple-300">加入我们</h2>
-                <p className="text-slate-400 text-center mb-8">今天就开始积累您的词汇量</p>
+                <p className="text-text-muted text-center mb-8">今天就开始积累您的词汇量</p>
 
                 {error && <div className="bg-red-500/20 text-red-200 p-3 rounded-lg mb-4 text-center text-sm">{error}</div>}
 
@@ -58,7 +62,7 @@ const Register: React.FC = () => {
                         注册
                     </button>
                 </form>
-                <div className="mt-6 text-center text-slate-400 text-sm">
+                <div className="mt-6 text-center text-text-muted text-sm">
                     已有账号？ <Link to="/login" className="text-accent hover:text-pink-400 font-medium">登录</Link>
                 </div>
             </div>

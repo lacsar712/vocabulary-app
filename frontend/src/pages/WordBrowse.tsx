@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { Volume2, Star, ChevronDown, ChevronUp, ArrowLeft, Plus, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 interface Word {
     id: number;
@@ -139,7 +140,7 @@ const WordBrowse: React.FC = () => {
                     <div
                         key={i}
                         className={`w-1.5 h-1.5 rounded-full ${
-                            i < filledDots ? 'bg-emerald-400' : 'bg-slate-600'
+                            i < filledDots ? 'bg-emerald-400' : 'bg-surface-hover'
                         }`}
                     />
                 ))}
@@ -148,22 +149,25 @@ const WordBrowse: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 p-4 md:p-8">
+        <div className="min-h-screen bg-page p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
                 <header className="flex items-center gap-4 mb-8">
                     <button
                         onClick={() => navigate('/')}
-                        className="p-2 rounded-full bg-slate-800 border border-slate-700 hover:bg-slate-700 transition cursor-pointer"
+                        className="p-2 rounded-full bg-surface border border-border-default hover:bg-surface-hover transition cursor-pointer"
                     >
-                        <ArrowLeft size={20} className="text-slate-300" />
+                        <ArrowLeft size={20} className="text-text-secondary" />
                     </button>
                     <div>
                         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
                             单词浏览
                         </h1>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <p className="text-text-muted text-sm mt-1">
                             浏览词库，将感兴趣的单词加入学习计划
                         </p>
+                    </div>
+                    <div className="ml-auto">
+                        <ThemeToggle />
                     </div>
                 </header>
 
@@ -171,7 +175,7 @@ const WordBrowse: React.FC = () => {
                     {/* 左侧筛选面板 */}
                     <div className="lg:w-64 flex-shrink-0">
                         <div className="glass-panel p-6 rounded-2xl sticky top-8">
-                            <h2 className="text-lg font-bold text-white mb-4">难度筛选</h2>
+                            <h2 className="text-lg font-bold text-text-primary mb-4">难度筛选</h2>
                             <div className="space-y-2">
                                 {levels.map((level) => (
                                     <button
@@ -180,14 +184,14 @@ const WordBrowse: React.FC = () => {
                                         className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
                                             selectedLevels.includes(level.level)
                                                 ? difficultyBgColors[level.level]
-                                                : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700/50'
+                                                : 'bg-card-bg border-card-border text-text-secondary hover:bg-surface-hover/50'
                                         }`}
                                     >
                                         <div
                                             className={`w-4 h-4 rounded flex items-center justify-center ${
                                                 selectedLevels.includes(level.level)
                                                     ? 'bg-white/20'
-                                                    : 'bg-slate-700'
+                                                    : 'bg-surface-hover'
                                             }`}
                                         >
                                             {selectedLevels.includes(level.level) && (
@@ -205,7 +209,7 @@ const WordBrowse: React.FC = () => {
                             {selectedLevels.length > 0 && (
                                 <button
                                     onClick={() => setSelectedLevels([])}
-                                    className="w-full mt-4 text-sm text-slate-400 hover:text-white transition"
+                                    className="w-full mt-4 text-sm text-text-muted hover:text-text-primary transition"
                                 >
                                     清除筛选
                                 </button>
@@ -218,14 +222,14 @@ const WordBrowse: React.FC = () => {
                         {/* 排序控制 */}
                         <div className="glass-panel p-4 rounded-xl mb-6 flex flex-wrap items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
-                                <span className="text-slate-400 text-sm">排序方式：</span>
+                                <span className="text-text-muted text-sm">排序方式：</span>
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setSortBy('difficulty')}
                                         className={`px-4 py-2 rounded-lg text-sm transition ${
                                             sortBy === 'difficulty'
                                                 ? 'bg-primary/20 text-primary border border-primary/30'
-                                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                                : 'bg-surface text-text-secondary hover:bg-surface-hover'
                                         }`}
                                     >
                                         按难度
@@ -235,7 +239,7 @@ const WordBrowse: React.FC = () => {
                                         className={`px-4 py-2 rounded-lg text-sm transition ${
                                             sortBy === 'frequency'
                                                 ? 'bg-primary/20 text-primary border border-primary/30'
-                                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                                : 'bg-surface text-text-secondary hover:bg-surface-hover'
                                         }`}
                                     >
                                         按使用频率
@@ -244,7 +248,7 @@ const WordBrowse: React.FC = () => {
                             </div>
                             <button
                                 onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition text-sm"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface text-text-secondary hover:bg-surface-hover transition text-sm"
                             >
                                 {sortOrder === 'asc' ? '升序' : '降序'}
                                 {sortOrder === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -252,18 +256,18 @@ const WordBrowse: React.FC = () => {
                         </div>
 
                         {/* 统计信息 */}
-                        <div className="text-sm text-slate-400 mb-4">
+                        <div className="text-sm text-text-muted mb-4">
                             共 {pagination?.total || 0} 个单词
                         </div>
 
                         {/* 卡片列表 */}
                         <div className="space-y-4">
                             {loading ? (
-                                <div className="text-center py-12 text-slate-400">
+                                <div className="text-center py-12 text-text-muted">
                                     加载中...
                                 </div>
                             ) : words.length === 0 ? (
-                                <div className="text-center py-12 text-slate-400 glass-panel rounded-2xl">
+                                <div className="text-center py-12 text-text-muted glass-panel rounded-2xl">
                                     <Star size={48} className="mx-auto mb-4 opacity-30" />
                                     <p>没有找到匹配的单词</p>
                                     <p className="text-sm mt-2">试试调整筛选条件</p>
@@ -280,7 +284,7 @@ const WordBrowse: React.FC = () => {
                                             className={`glass-panel rounded-2xl overflow-hidden cursor-pointer transition-all ${
                                                 expandedCardId === word.id
                                                     ? 'ring-2 ring-primary/50'
-                                                    : 'hover:bg-slate-800/80'
+                                                    : 'hover:bg-surface/80'
                                             }`}
                                             onClick={() => toggleCardExpand(word.id)}
                                         >
@@ -288,10 +292,10 @@ const WordBrowse: React.FC = () => {
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex-1">
                                                         <div className="flex items-baseline gap-3 mb-1">
-                                                            <h3 className="text-2xl font-bold text-white">
+                                                            <h3 className="text-2xl font-bold text-text-primary">
                                                                 {word.word}
                                                             </h3>
-                                                            <span className="text-slate-400 italic font-serif">
+                                                            <span className="text-text-muted italic font-serif">
                                                                 {word.pos}
                                                             </span>
                                                         </div>
@@ -321,7 +325,7 @@ const WordBrowse: React.FC = () => {
                                                             className={`p-2 rounded-full transition-all ${
                                                                 word.in_study_plan
                                                                     ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                                                                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                                                                    : 'bg-surface-hover text-text-muted hover:bg-surface-hover hover:text-text-primary'
                                                             }`}
                                                             title={word.in_study_plan ? '从学习计划移除' : '加入学习计划'}
                                                         >
@@ -331,9 +335,9 @@ const WordBrowse: React.FC = () => {
                                                 </div>
 
                                                 <div className="mt-4 flex items-center justify-between">
-                                                    <p className="text-slate-200">{word.definition}</p>
+                                                    <p className="text-text-secondary">{word.definition}</p>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-slate-500">常用度</span>
+                                                        <span className="text-xs text-text-faint">常用度</span>
                                                         {renderFrequencyDots(word.frequency)}
                                                     </div>
                                                 </div>
@@ -346,11 +350,11 @@ const WordBrowse: React.FC = () => {
                                                             exit={{ height: 0, opacity: 0 }}
                                                             className="overflow-hidden"
                                                         >
-                                                            <div className="mt-4 pt-4 border-t border-slate-700">
-                                                                <h4 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">
+                                                            <div className="mt-4 pt-4 border-t border-border-default">
+                                                                <h4 className="text-sm font-bold text-text-faint uppercase tracking-widest mb-2">
                                                                     例句
                                                                 </h4>
-                                                                <p className="text-indigo-200 italic font-serif text-lg">
+                                                                <p className="text-primary/80 italic font-serif text-lg">
                                                                     "{word.example}"
                                                                 </p>
                                                             </div>
@@ -361,7 +365,7 @@ const WordBrowse: React.FC = () => {
                                                 <div className="mt-3 flex justify-center">
                                                     <ChevronDown
                                                         size={16}
-                                                        className={`text-slate-500 transition-transform ${
+                                                        className={`text-text-faint transition-transform ${
                                                             expandedCardId === word.id ? 'rotate-180' : ''
                                                         }`}
                                                     />
@@ -379,7 +383,7 @@ const WordBrowse: React.FC = () => {
                                 <button
                                     onClick={() => handlePageChange(pagination.page - 1)}
                                     disabled={pagination.page === 1}
-                                    className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                    className="px-4 py-2 rounded-lg bg-surface text-text-secondary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition"
                                 >
                                     上一页
                                 </button>
@@ -397,8 +401,8 @@ const WordBrowse: React.FC = () => {
                                                     onClick={() => handlePageChange(pageNum)}
                                                     className={`w-10 h-10 rounded-lg transition ${
                                                         pagination.page === pageNum
-                                                            ? 'bg-primary text-white'
-                                                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                                            ? 'bg-primary text-text-primary'
+                                                            : 'bg-surface text-text-secondary hover:bg-surface-hover'
                                                     }`}
                                                 >
                                                     {pageNum}
@@ -408,7 +412,7 @@ const WordBrowse: React.FC = () => {
                                             pageNum === pagination.page - 2 ||
                                             pageNum === pagination.page + 2
                                         ) {
-                                            return <span key={pageNum} className="px-2 text-slate-500">...</span>;
+                                            return <span key={pageNum} className="px-2 text-text-faint">...</span>;
                                         }
                                         return null;
                                     })}
@@ -416,7 +420,7 @@ const WordBrowse: React.FC = () => {
                                 <button
                                     onClick={() => handlePageChange(pagination.page + 1)}
                                     disabled={pagination.page === pagination.totalPages}
-                                    className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                    className="px-4 py-2 rounded-lg bg-surface text-text-secondary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition"
                                 >
                                     下一页
                                 </button>

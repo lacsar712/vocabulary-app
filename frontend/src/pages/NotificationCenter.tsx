@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import api from '../api';
-import { Bell, Clock, Target, TrendingUp, Award, Megaphone, Trash2, CheckCheck, ChevronDown, ChevronUp, ArrowLeft, Filter } from 'lucide-react';
+import { Bell, Clock, Target, TrendingUp, Award, Megaphone, Trash2, CheckCheck, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 interface Notification {
     id: number;
@@ -25,7 +25,7 @@ interface Pagination {
 }
 
 const NOTIFICATION_TYPES = [
-    { key: '', label: '全部', icon: Bell, color: 'text-slate-300', bgColor: 'bg-slate-500/20', borderColor: 'border-slate-500/30' },
+    { key: '', label: '全部', icon: Bell, color: 'text-text-secondary', bgColor: 'bg-slate-500/20', borderColor: 'border-slate-500/30' },
     { key: 'review_reminder', label: '复习提醒', icon: Clock, color: 'text-blue-400', bgColor: 'bg-blue-500/20', borderColor: 'border-blue-500/30' },
     { key: 'goal_achievement', label: '目标达成', icon: Target, color: 'text-emerald-400', bgColor: 'bg-emerald-500/20', borderColor: 'border-emerald-500/30' },
     { key: 'rank_change', label: '排名变动', icon: TrendingUp, color: 'text-amber-400', bgColor: 'bg-amber-500/20', borderColor: 'border-amber-500/30' },
@@ -52,7 +52,6 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 const NotificationCenter: React.FC = () => {
-    const { user } = useAuth();
     const { refreshUnreadCount } = useNotifications();
     const navigate = useNavigate();
 
@@ -157,36 +156,39 @@ const NotificationCenter: React.FC = () => {
     const hasUnread = notifications.some(n => !n.is_read);
     const hasUnreadByActiveType = activeType ? notifications.some(n => n.type === activeType && !n.is_read) : hasUnread;
 
-    if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">加载消息中...</div>;
+    if (loading) return <div className="min-h-screen bg-page flex items-center justify-center text-text-primary">加载消息中...</div>;
 
     return (
-        <div className="min-h-screen bg-slate-900 p-4 md:p-8">
+        <div className="min-h-screen bg-page p-4 md:p-8">
             <div className="max-w-3xl mx-auto">
                 <header className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => navigate('/')}
-                            className="p-2 rounded-full bg-slate-800 border border-slate-700 hover:bg-slate-700 transition cursor-pointer"
+                            className="p-2 rounded-full bg-surface border border-border-default hover:bg-surface-hover transition cursor-pointer"
                         >
-                            <ArrowLeft size={20} className="text-slate-300" />
+                            <ArrowLeft size={20} className="text-text-secondary" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                            <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
                                 <Bell size={24} className="text-primary" />
                                 消息中心
                             </h1>
-                            <p className="text-slate-400 text-sm">共 {pagination.total} 条通知</p>
+                            <p className="text-text-muted text-sm">共 {pagination.total} 条通知</p>
                         </div>
                     </div>
-                    {hasUnread && (
-                        <button
-                            onClick={handleMarkAllRead}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm hover:bg-emerald-500/20 transition cursor-pointer"
-                        >
-                            <CheckCheck size={16} />
-                            全部已读
-                        </button>
-                    )}
+                    <div className="flex items-center gap-3">
+                        <ThemeToggle />
+                        {hasUnread && (
+                            <button
+                                onClick={handleMarkAllRead}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm hover:bg-emerald-500/20 transition cursor-pointer"
+                            >
+                                <CheckCheck size={16} />
+                                全部已读
+                            </button>
+                        )}
+                    </div>
                 </header>
 
                 <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
@@ -200,7 +202,7 @@ const NotificationCenter: React.FC = () => {
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition cursor-pointer border ${
                                     isActive
                                         ? `${t.bgColor} ${t.color} ${t.borderColor}`
-                                        : 'bg-slate-800/50 text-slate-400 border-slate-700/50 hover:bg-slate-800 hover:text-slate-300'
+                                        : 'bg-card-bg text-text-muted border-card-border hover:bg-surface hover:text-text-secondary'
                                 }`}
                             >
                                 <Icon size={14} />
@@ -214,7 +216,7 @@ const NotificationCenter: React.FC = () => {
                     <div className="flex justify-end mb-3">
                         <button
                             onClick={() => handleMarkTypeRead(activeType)}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition cursor-pointer"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs text-text-muted hover:text-emerald-400 hover:bg-emerald-500/10 transition cursor-pointer"
                         >
                             <CheckCheck size={12} />
                             将此类全部标为已读
@@ -239,7 +241,7 @@ const NotificationCenter: React.FC = () => {
                                     transition={{ duration: 0.2 }}
                                     onClick={() => handleToggleExpand(n)}
                                     className={`glass-panel rounded-xl p-4 cursor-pointer transition-all ${
-                                        !n.is_read ? 'border-l-4 border-l-primary bg-slate-800/80' : 'bg-slate-800/40'
+                                        !n.is_read ? 'border-l-4 border-l-primary bg-surface/80' : 'bg-surface/40'
                                     }`}
                                 >
                                     <div className="flex items-start gap-3">
@@ -248,18 +250,18 @@ const NotificationCenter: React.FC = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h3 className={`text-sm font-semibold ${!n.is_read ? 'text-white' : 'text-slate-400'}`}>
+                                                <h3 className={`text-sm font-semibold ${!n.is_read ? 'text-text-primary' : 'text-text-muted'}`}>
                                                     {n.title}
                                                 </h3>
                                                 {!n.is_read && (
                                                     <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
                                                 )}
                                             </div>
-                                            <p className={`text-sm ${!n.is_read ? 'text-slate-300' : 'text-slate-500'} line-clamp-2`}>
+                                            <p className={`text-sm ${!n.is_read ? 'text-text-secondary' : 'text-text-faint'} line-clamp-2`}>
                                                 {n.summary}
                                             </p>
                                             <div className="flex items-center gap-3 mt-2">
-                                                <span className="text-xs text-slate-500">{formatRelativeTime(n.created_at)}</span>
+                                                <span className="text-xs text-text-faint">{formatRelativeTime(n.created_at)}</span>
                                                 <span className={`text-xs px-1.5 py-0.5 rounded ${typeConfig.bgColor} ${typeConfig.color}`}>
                                                     {typeConfig.label}
                                                 </span>
@@ -267,9 +269,9 @@ const NotificationCenter: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-1 flex-shrink-0">
                                             {isExpanded ? (
-                                                <ChevronUp size={16} className="text-slate-500" />
+                                                <ChevronUp size={16} className="text-text-faint" />
                                             ) : (
-                                                <ChevronDown size={16} className="text-slate-500" />
+                                                <ChevronDown size={16} className="text-text-faint" />
                                             )}
                                         </div>
                                     </div>
@@ -283,8 +285,8 @@ const NotificationCenter: React.FC = () => {
                                                 transition={{ duration: 0.2 }}
                                                 className="overflow-hidden"
                                             >
-                                                <div className="mt-3 pt-3 border-t border-slate-700/50">
-                                                    <p className="text-sm text-slate-300 leading-relaxed">{n.detail}</p>
+                                                <div className="mt-3 pt-3 border-t border-card-border">
+                                                    <p className="text-sm text-text-secondary leading-relaxed">{n.detail}</p>
                                                     <div className="flex justify-end mt-3">
                                                         <button
                                                             onClick={(e) => handleDelete(n.id, e)}
@@ -305,9 +307,9 @@ const NotificationCenter: React.FC = () => {
 
                     {notifications.length === 0 && !loading && (
                         <div className="glass-panel rounded-xl p-12 text-center">
-                            <Bell size={48} className="text-slate-600 mx-auto mb-4" />
-                            <h3 className="text-lg font-semibold text-slate-400 mb-2">暂无消息</h3>
-                            <p className="text-slate-500 text-sm">当有新的学习通知时，会在这里显示</p>
+                            <Bell size={48} className="text-text-faint mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold text-text-muted mb-2">暂无消息</h3>
+                            <p className="text-text-faint text-sm">当有新的学习通知时，会在这里显示</p>
                         </div>
                     )}
                 </div>
@@ -317,7 +319,7 @@ const NotificationCenter: React.FC = () => {
                         <button
                             onClick={handleLoadMore}
                             disabled={loadingMore}
-                            className="px-6 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition cursor-pointer disabled:opacity-50"
+                            className="px-6 py-2.5 rounded-xl bg-surface border border-border-default text-text-secondary hover:bg-surface-hover transition cursor-pointer disabled:opacity-50"
                         >
                             {loadingMore ? '加载中...' : '加载更多'}
                         </button>
