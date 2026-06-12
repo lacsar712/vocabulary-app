@@ -1008,6 +1008,197 @@ app.post('/api/notifications', authenticate, (req, res) => {
     );
 });
 
+// ========== Vocabulary Notebook (生词本) API ==========
+
+// 获取生词本列表（支持搜索和排序）
+app.get('/api/vocabulary-notebook', authenticate, (req, res) => {
+    const keyword = req.query.keyword ? `%${req.query.keyword}%` : null;
+    const sortBy = req.query.sortBy === 'difficulty' ? 'difficulty_level' : 'added_at';
+    const sortOrder = req.query.sortOrder === 'asc' ? 'ASC' : 'DESC';
+
+    let whereClause = 'WHERE vn.user_id = ?';
+    let params = [req.user.id];
+
+    if (keyword) {
+        whereClause += ` AND (w.word LIKE ? OR w.definition LIKE ?)`;
+        params.push(keyword, keyword);
+    }
+
+    const countSql = `
+        SELECT COUNT(*) as total
+        FROM vocabulary_notebook vn
+        JOIN words w ON vn.word_id = w.id
+        ${whereClause}
+    `;
+
+    const dataSql = `
+        SELECT vn.id as notebook_id, vn.added_at, vn.personal_note,
+               w.id as word_id, w.word, w.pronunciation, w.pos, w.definition, w.example, w.rank, w.frequency, w.difficulty_level,
+               EXISTS(SELECT 1 FROM learning_history lh WHERE lh.user_id = vn.user_id AND lh.word_id = w.id AND lh.status = 'learned') as is_mastered,
+               EXISTS(SELECT 1 FROM learning_history lh WHERE lh.user_id = vn.user_id AND lh.word_id = w.id AND lh.status = 'skipped') as is_skipped
+        FROM vocabulary_notebook vn
+        JOIN words w ON vn.word_id = w.id
+        ${whereClause}
+        ORDER BY ${sortBy} ${sortOrder}
+    `;
+
+    db.get(countSql, params, (err, countResult) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        db.all(dataSql, params, (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            // Get weekly added count
+            db.get(`
+                SELECT COUNT(*) as weekly_added
+                FROM vocabulary_notebook
+                WHERE user_id = ? AND added_at >= datetime('now', '-7 days')
+            `, [req.user.id], (err2, weeklyResult) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+
+                res.json({
+                    total: countResult.total,
+                    weekly_added: weeklyResult.weekly_added,
+                    words: rows
+                });
+            });
+        });
+    });
+});
+
+// 获取生词本数量（用于主页角标）
+app.get('/api/vocabulary-notebook/count', authenticate, (req, res) => {
+    db.get(
+        "SELECT COUNT(*) as count FROM vocabulary_notebook WHERE user_id = ?",
+        [req.user.id],
+        (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ count: row.count });
+        }
+    );
+});
+
+// 检查单词是否在生词本中
+app.get('/api/vocabulary-notebook/check/:wordId', authenticate, (req, res) => {
+    const wordId = parseInt(req.params.wordId);
+    db.get(
+        "SELECT id FROM vocabulary_notebook WHERE user_id = ? AND word_id = ?",
+        [req.user.id, wordId],
+        (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ in_notebook: !!row });
+        }
+    );
+});
+
+// 添加单词到生词本
+app.post('/api/vocabulary-notebook', authenticate, (req, res) => {
+    const { word_id } = req.body;
+    if (!word_id) return res.status(400).json({ error: '缺少 word_id 参数' });
+
+    db.run("INSERT OR IGNORE INTO vocabulary_notebook (user_id, word_id) VALUES (?, ?)",
+        [req.user.id, word_id],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            const added = this.changes > 0;
+            if (added) {
+                db.get("SELECT word FROM words WHERE id = ?", [word_id], (e2, w) => {
+                    if (w) {
+                        createNotification(req.user.id, 'notebook_add', '加入生词本', `单词 "${w.word}" 已加入生词本`, `单词 "${w.word}" 已成功添加到你的生词本，你可以在生词本页面进行反复回顾。`);
+                    }
+                });
+            }
+            res.json({ success: true, added });
+        }
+    );
+});
+
+// 从生词本移除单个单词
+app.delete('/api/vocabulary-notebook/:wordId', authenticate, (req, res) => {
+    const wordId = parseInt(req.params.wordId);
+    db.run("DELETE FROM vocabulary_notebook WHERE user_id = ? AND word_id = ?",
+        [req.user.id, wordId],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, removed: this.changes > 0 });
+        }
+    );
+});
+
+// 批量移除生词本中的单词
+app.post('/api/vocabulary-notebook/batch-remove', authenticate, (req, res) => {
+    const { word_ids } = req.body;
+    if (!Array.isArray(word_ids) || word_ids.length === 0) {
+        return res.status(400).json({ error: '请选择要移除的单词' });
+    }
+
+    const placeholders = word_ids.map(() => '?').join(',');
+    const params = [req.user.id, ...word_ids];
+
+    db.run(`DELETE FROM vocabulary_notebook WHERE user_id = ? AND word_id IN (${placeholders})`,
+        params,
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, removed_count: this.changes });
+        }
+    );
+});
+
+// 更新个人备注
+app.put('/api/vocabulary-notebook/:wordId/note', authenticate, (req, res) => {
+    const wordId = parseInt(req.params.wordId);
+    const { personal_note } = req.body;
+    if (personal_note === undefined) {
+        return res.status(400).json({ error: '缺少 personal_note 参数' });
+    }
+
+    db.run("UPDATE vocabulary_notebook SET personal_note = ? WHERE user_id = ? AND word_id = ?",
+        [personal_note, req.user.id, wordId],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, updated: this.changes > 0 });
+        }
+    );
+});
+
+// 标记单词为已掌握（同时从生词本移出并加入学习记录）
+app.post('/api/vocabulary-notebook/:wordId/master', authenticate, (req, res) => {
+    const wordId = parseInt(req.params.wordId);
+
+    db.serialize(() => {
+        // 1. 加入学习记录
+        const stmt1 = db.prepare("INSERT OR IGNORE INTO learning_history (user_id, word_id, status) VALUES (?, ?, 'learned')");
+        stmt1.run(req.user.id, wordId);
+        stmt1.finalize();
+
+        // 2. 从生词本移除
+        const stmt2 = db.prepare("DELETE FROM vocabulary_notebook WHERE user_id = ? AND word_id = ?");
+        stmt2.run(req.user.id, wordId, function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+
+            // 3. 发送通知
+            db.get("SELECT word FROM words WHERE id = ?", [wordId], (e2, w) => {
+                if (w) {
+                    createNotification(req.user.id, 'mastered_from_notebook', '生词已掌握', `恭喜！单词 "${w.word}" 已掌握并从生词本移除`, `你已成功掌握单词 "${w.word}"，它已从生词本中移除并计入学习记录。继续加油！`);
+                }
+            });
+
+            // 4. 检查里程碑
+            db.get("SELECT COUNT(*) as cnt FROM learning_history WHERE user_id = ? AND status = 'learned'", [req.user.id], (e2, row) => {
+                if (row) {
+                    const cnt = row.cnt;
+                    const milestones = [10, 50, 100, 200, 500, 1000];
+                    if (milestones.includes(cnt)) {
+                        createNotification(req.user.id, 'goal_achievement', '学习目标达成！', `恭喜！你已累计掌握 ${cnt} 个单词！`, `你的词汇学习取得了重大进展，已累计掌握 ${cnt} 个单词。继续加油！`);
+                    }
+                }
+                res.json({ success: true, mastered: true });
+            });
+        });
+        stmt2.finalize();
+    });
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

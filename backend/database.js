@@ -319,6 +319,20 @@ db.serialize(() => {
     db.run(`CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_notifications_user_type ON notifications(user_id, type)`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS vocabulary_notebook (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        word_id INTEGER NOT NULL,
+        personal_note TEXT,
+        added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(word_id) REFERENCES words(id),
+        UNIQUE(user_id, word_id)
+    )`);
+
+    db.run(`CREATE INDEX IF NOT EXISTS idx_vocab_notebook_user ON vocabulary_notebook(user_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_vocab_notebook_user_word ON vocabulary_notebook(user_id, word_id)`);
+
     setTimeout(() => {
         const stmt = db.prepare(`
             INSERT INTO words (word, pronunciation, pos, definition, example, rank, frequency, difficulty_level)

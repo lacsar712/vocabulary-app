@@ -11,6 +11,7 @@ import Leaderboard from './pages/Leaderboard';
 import ThemeLearning from './pages/ThemeLearning';
 import NotificationCenter from './pages/NotificationCenter';
 import Onboarding from './pages/Onboarding';
+import VocabularyNotebook from './pages/VocabularyNotebook';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { isAuthenticated } = useAuth();
@@ -59,6 +60,11 @@ function App() {
               <Route path="/onboarding" element={
                 <ProtectedRoute>
                   <Onboarding />
+                </ProtectedRoute>
+              } />
+              <Route path="/vocabulary-notebook" element={
+                <ProtectedRoute>
+                  <VocabularyNotebook />
                 </ProtectedRoute>
               } />
               <Route path="/" element={

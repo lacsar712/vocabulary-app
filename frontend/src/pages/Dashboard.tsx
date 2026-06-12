@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import api from '../api';
-import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy, Bookmark, Bell, Settings } from 'lucide-react';
+import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy, Bookmark, Bell, Settings, NotebookPen, Plus, Check } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 import SettingsPanel from '../components/SettingsPanel';
 import { motion } from 'framer-motion';
@@ -46,15 +46,56 @@ const Dashboard: React.FC = () => {
     const [showReview, setShowReview] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [themePrefs, setThemePrefs] = useState<{id: number; key: string; name: string; icon: string; color: string}[]>([]);
+    const [notebookCount, setNotebookCount] = useState(0);
+    const [wordInNotebook, setWordInNotebook] = useState(false);
     const navigate = useNavigate();
 
     const fetchRecommendation = async () => {
         try {
             const res = await api.get('/recommend');
             setWord(res.data);
+            if (res.data && res.data.id) {
+                await checkWordInNotebook(res.data.id);
+            }
         } catch (e) {
             console.error(e);
         }
+    };
+
+    const fetchNotebookCount = async () => {
+        try {
+            const res = await api.get('/vocabulary-notebook/count');
+            setNotebookCount(res.data.count);
+        } catch (e) { console.error(e); }
+    };
+
+    const checkWordInNotebook = async (wordId: number) => {
+        try {
+            const res = await api.get(`/vocabulary-notebook/check/${wordId}`);
+            setWordInNotebook(res.data.in_notebook);
+        } catch (e) { console.error(e); }
+    };
+
+    const handleAddToNotebook = async () => {
+        if (!word) return;
+        try {
+            const res = await api.post('/vocabulary-notebook', { word_id: word.id });
+            if (res.data.added) {
+                setWordInNotebook(true);
+                setNotebookCount(prev => prev + 1);
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    const handleRemoveFromNotebook = async () => {
+        if (!word) return;
+        try {
+            const res = await api.delete(`/vocabulary-notebook/${word.id}`);
+            if (res.data.removed) {
+                setWordInNotebook(false);
+                setNotebookCount(prev => Math.max(0, prev - 1));
+            }
+        } catch (e) { console.error(e); }
     };
 
     const fetchStats = async () => {
@@ -82,7 +123,7 @@ const Dashboard: React.FC = () => {
 
     const refreshData = () => {
         setLoading(true);
-        Promise.all([fetchRecommendation(), fetchStats(), fetchThemePrefs()]).then(() => setLoading(false));
+        Promise.all([fetchRecommendation(), fetchStats(), fetchThemePrefs(), fetchNotebookCount()]).then(() => setLoading(false));
     };
 
     useEffect(() => {
@@ -218,6 +259,18 @@ const Dashboard: React.FC = () => {
                                     <CheckCircle size={24} />
                                     标为已掌握
                                 </button>
+                                <button
+                                    onClick={wordInNotebook ? handleRemoveFromNotebook : handleAddToNotebook}
+                                    className={`px-6 flex items-center gap-2 rounded-xl font-semibold transition border cursor-pointer ${
+                                        wordInNotebook
+                                            ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/30'
+                                            : 'bg-surface border-border-default text-text-secondary hover:bg-amber-500/20 hover:border-amber-500/50 hover:text-amber-300'
+                                    }`}
+                                    title={wordInNotebook ? '已在生词本中，点击移除' : '加入生词本'}
+                                >
+                                    {wordInNotebook ? <Check size={24} /> : <Plus size={24} />}
+                                    <NotebookPen size={24} />
+                                </button>
                                 <button onClick={handleSkip} className="btn-secondary px-6" title="跳过">
                                     <Book size={24} />
                                 </button>
@@ -258,6 +311,18 @@ const Dashboard: React.FC = () => {
                     <div className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-indigo-900/20 to-purple-900/20">
                         <h3 className="text-lg font-bold text-text-primary mb-4">快捷操作</h3>
                         <div className="space-y-3">
+                            <button
+                                onClick={() => navigate('/vocabulary-notebook')}
+                                className="w-full text-left p-3 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 transition text-text-secondary hover:text-text-primary flex items-center gap-3 border border-amber-500/30 relative"
+                            >
+                                <NotebookPen size={16} className="text-amber-400" />
+                                <span className="flex-1">生词本</span>
+                                {notebookCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 min-w-[20px] h-[20px] flex items-center justify-center px-1.5 rounded-full bg-amber-500 text-white text-xs font-bold leading-none shadow-lg">
+                                        {notebookCount > 99 ? '99+' : notebookCount}
+                                    </span>
+                                )}
+                            </button>
                             <button
                                 onClick={() => navigate('/themes')}
                                 className="w-full text-left p-3 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 transition text-text-secondary hover:text-text-primary flex items-center gap-3 border border-cyan-500/30"
