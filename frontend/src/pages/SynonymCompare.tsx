@@ -34,8 +34,10 @@ interface SearchResult {
         id: number;
         name: string;
         description: string;
+        all_group_word_ids?: number[];
         members: SynonymMember[];
     } | null;
+    all_word_ids?: number[];
     similarWords?: SynonymMember[];
 }
 
@@ -132,7 +134,14 @@ const SynonymCompare: React.FC = () => {
         const members = searchResult?.group?.members || searchResult?.similarWords || [];
         if (members.length === 0) return;
 
-        const wordIds = members.map(m => m.id);
+        const presetGroupIds = searchResult?.group?.all_group_word_ids;
+        const similarGroupIds = searchResult?.all_word_ids;
+        const wordIds = presetGroupIds && presetGroupIds.length > 0
+            ? presetGroupIds
+            : (similarGroupIds && similarGroupIds.length > 0
+                ? similarGroupIds
+                : members.map(m => m.id));
+
         try {
             const res = await api.post('/synonym/add-group-to-plan', { word_ids: wordIds });
             if (res.data.success) {

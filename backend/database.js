@@ -110,7 +110,20 @@ const wordList = [
     { word: "commence", pronunciation: "/kəˈmens/", pos: "v.", definition: "开始；着手（正式用语）", example: "The ceremony will commence shortly.", rank: 4800, frequency: 4, difficulty_level: 4 },
     { word: "help", pronunciation: "/help/", pos: "v.", definition: "帮助；帮忙", example: "Can you help me with this?", rank: 108, frequency: 10, difficulty_level: 1 },
     { word: "assist", pronunciation: "/əˈsɪst/", pos: "v.", definition: "协助；帮助", example: "The nurse assisted the doctor during the operation.", rank: 2500, frequency: 6, difficulty_level: 3 },
-    { word: "aid", pronunciation: "/eɪd/", pos: "v.", definition: "援助；资助", example: "The government aided the victims of the flood.", rank: 2700, frequency: 6, difficulty_level: 3 }
+    { word: "aid", pronunciation: "/eɪd/", pos: "v.", definition: "援助；资助", example: "The government aided the victims of the flood.", rank: 2700, frequency: 6, difficulty_level: 3 },
+    { word: "miniature", pronunciation: "/ˈmɪnɪtʃər/", pos: "adj.", definition: "微型的，小型的", example: "She has a miniature garden on her windowsill.", rank: 4200, frequency: 4, difficulty_level: 4 },
+    { word: "attractive", pronunciation: "/əˈtræktɪv/", pos: "adj.", definition: "有吸引力的，迷人的", example: "She found him very attractive.", rank: 1800, frequency: 7, difficulty_level: 3 },
+    { word: "joyful", pronunciation: "/ˈdʒɔɪfl/", pos: "adj.", definition: "充满喜悦的，快乐的", example: "It was a joyful occasion for everyone.", rank: 3000, frequency: 5, difficulty_level: 3 },
+    { word: "miserable", pronunciation: "/ˈmɪzrəbl/", pos: "adj.", definition: "痛苦的，悲惨的", example: "She felt miserable when her dog died.", rank: 2400, frequency: 6, difficulty_level: 3 },
+    { word: "swift", pronunciation: "/swɪft/", pos: "adj.", definition: "迅速的，快捷的", example: "The company took swift action to fix the problem.", rank: 3100, frequency: 5, difficulty_level: 3 },
+    { word: "intelligent", pronunciation: "/ɪnˈtelɪdʒənt/", pos: "adj.", definition: "聪明的，有智力的", example: "She is an intelligent student.", rank: 1900, frequency: 7, difficulty_level: 3 },
+    { word: "observe", pronunciation: "/əbˈzɜːv/", pos: "v.", definition: "观察，注意到", example: "The scientist observed the behavior of the animals.", rank: 2200, frequency: 6, difficulty_level: 3 },
+    { word: "talk", pronunciation: "/tɔːk/", pos: "v.", definition: "说话，交谈", example: "We talked for hours about our plans.", rank: 110, frequency: 10, difficulty_level: 1 },
+    { word: "wander", pronunciation: "/ˈwɒndər/", pos: "v.", definition: "漫游，闲逛", example: "They wandered through the old streets of the town.", rank: 3300, frequency: 5, difficulty_level: 3 },
+    { word: "gigantic", pronunciation: "/dʒaɪˈɡæntɪk/", pos: "adj.", definition: "巨大的，庞大的", example: "The project was a gigantic success.", rank: 5000, frequency: 4, difficulty_level: 4 },
+    { word: "irritated", pronunciation: "/ˈɪrɪteɪtɪd/", pos: "adj.", definition: "恼怒的，生气的", example: "He was irritated by the noise from next door.", rank: 3600, frequency: 5, difficulty_level: 3 },
+    { word: "initiate", pronunciation: "/ɪˈnɪʃieɪt/", pos: "v.", definition: "开始，发起", example: "The company initiated a new marketing campaign.", rank: 4500, frequency: 4, difficulty_level: 4 },
+    { word: "support", pronunciation: "/səˈpɔːt/", pos: "v.", definition: "支持，支撑", example: "I will support you whatever you decide.", rank: 400, frequency: 9, difficulty_level: 2 }
 ];
 
 
@@ -206,129 +219,143 @@ const wordThemeMap = {
 
 const SYNONYM_GROUPS = [
     {
-        name: 'big / large / great',
-        description: '均表示"大"，但侧重不同',
+        name: 'big / large / great / huge',
+        description: '均表示"大"，但侧重和程度不同',
         members: [
             { word: 'big', usage_diff: '最常用，指体积、面积、重量等大，偏口语化' },
             { word: 'large', usage_diff: '较正式，指体积、数量、容量等大，范围更广' },
-            { word: 'great', usage_diff: '强调程度、重要性或伟大，也常表示"极好的"' }
+            { word: 'great', usage_diff: '强调程度、重要性或伟大，也常表示"极好的"' },
+            { word: 'huge', usage_diff: '强调体积或规模非常大，程度比 big 更深' }
         ]
     },
     {
-        name: 'small / little / tiny',
+        name: 'small / little / tiny / miniature',
         description: '均表示"小"，但语气和侧重点不同',
         members: [
             { word: 'small', usage_diff: '客观描述尺寸、数量等小，中性词' },
             { word: 'little', usage_diff: '带感情色彩，常含可爱、怜悯之意' },
-            { word: 'tiny', usage_diff: '强调极小、微小的程度' }
+            { word: 'tiny', usage_diff: '强调极小、微小的程度' },
+            { word: 'miniature', usage_diff: '指缩小版的模型或微型的，较正式' }
         ]
     },
     {
-        name: 'beautiful / pretty / handsome',
+        name: 'beautiful / pretty / handsome / attractive',
         description: '均表示"好看"，但适用对象和语气不同',
         members: [
             { word: 'beautiful', usage_diff: '形容人或物极为美丽，程度最深，尤指女性' },
             { word: 'pretty', usage_diff: '娇小可爱之美，程度较轻，多用于女性或小孩' },
-            { word: 'handsome', usage_diff: '形容男性英俊，或指体面、大方的美' }
+            { word: 'handsome', usage_diff: '形容男性英俊，或指体面、大方的美' },
+            { word: 'attractive', usage_diff: '强调有吸引力的、迷人的，可修饰男女' }
         ]
     },
     {
-        name: 'happy / glad / cheerful',
+        name: 'happy / glad / cheerful / joyful',
         description: '均表示"高兴"，但用法和语境有差异',
         members: [
             { word: 'happy', usage_diff: '最通用，表示幸福、满足的高兴' },
             { word: 'glad', usage_diff: '多用于对某事感到高兴，常搭配 about 或不定式' },
-            { word: 'cheerful', usage_diff: '强调开朗、乐观的性格或情绪状态' }
+            { word: 'cheerful', usage_diff: '强调开朗、乐观的性格或情绪状态' },
+            { word: 'joyful', usage_diff: '强调充满喜悦的，程度较深，较正式' }
         ]
     },
     {
-        name: 'sad / unhappy / sorrowful',
+        name: 'sad / unhappy / sorrowful / miserable',
         description: '均表示"悲伤"，但程度和用法不同',
         members: [
             { word: 'sad', usage_diff: '最通用，泛指各种程度的悲伤' },
             { word: 'unhappy', usage_diff: '侧重不快乐、不满意，程度较轻' },
-            { word: 'sorrowful', usage_diff: '文学用词，表示深切的悲伤和哀痛' }
+            { word: 'sorrowful', usage_diff: '文学用词，表示深切的悲伤和哀痛' },
+            { word: 'miserable', usage_diff: '强调痛苦、悲惨的状态，程度最深' }
         ]
     },
     {
-        name: 'fast / quick / rapid',
+        name: 'fast / quick / rapid / swift',
         description: '均表示"快"，但侧重点和搭配不同',
         members: [
             { word: 'fast', usage_diff: '侧重速度高，可作形容词和副词' },
             { word: 'quick', usage_diff: '侧重时间短、反应迅速，更强调短暂' },
-            { word: 'rapid', usage_diff: '较正式，指变化或增长速度快' }
+            { word: 'rapid', usage_diff: '较正式，指变化或增长速度快' },
+            { word: 'swift', usage_diff: '文学用词，强调优雅而快速的动作' }
         ]
     },
     {
-        name: 'smart / clever / wise',
+        name: 'smart / clever / wise / intelligent',
         description: '均表示"聪明"，但含义侧重不同',
         members: [
             { word: 'smart', usage_diff: '强调机敏、精明，美式也指整洁时髦' },
             { word: 'clever', usage_diff: '强调学习和理解能力强，善于做某事' },
-            { word: 'wise', usage_diff: '强调有智慧、判断力强，经验丰富' }
+            { word: 'wise', usage_diff: '强调有智慧、判断力强，经验丰富' },
+            { word: 'intelligent', usage_diff: '强调智力高、思维敏捷，较正式' }
         ]
     },
     {
-        name: 'look / see / watch',
+        name: 'look / see / watch / observe',
         description: '均与"看"有关，但动作方式不同',
         members: [
             { word: 'look', usage_diff: '强调看的动作，通常搭配 at' },
             { word: 'see', usage_diff: '强调看的结果，自然地看到' },
-            { word: 'watch', usage_diff: '强调专注地、持续地观察' }
+            { word: 'watch', usage_diff: '强调专注地、持续地观察' },
+            { word: 'observe', usage_diff: '较正式，指仔细观察、研究' }
         ]
     },
     {
-        name: 'say / tell / speak',
+        name: 'say / tell / speak / talk',
         description: '均与"说"有关，但用法和搭配不同',
         members: [
             { word: 'say', usage_diff: '强调说话的内容，后接引语或 that 从句' },
             { word: 'tell', usage_diff: '强调告知某人某事，搭配双宾语' },
-            { word: 'speak', usage_diff: '强调说话的行为或能力，不强调内容' }
+            { word: 'speak', usage_diff: '强调说话的行为或能力，不强调内容' },
+            { word: 'talk', usage_diff: '强调交谈、对话，常搭配 with/to' }
         ]
     },
     {
-        name: 'walk / march / stroll',
+        name: 'walk / march / stroll / wander',
         description: '均表示"走"，但方式和语气不同',
         members: [
             { word: 'walk', usage_diff: '最通用的"步行"，无特殊感情色彩' },
             { word: 'march', usage_diff: '指齐步前进，带有严肃或坚定的意味' },
-            { word: 'stroll', usage_diff: '指悠闲散步，节奏缓慢放松' }
+            { word: 'stroll', usage_diff: '指悠闲散步，节奏缓慢放松' },
+            { word: 'wander', usage_diff: '指漫无目的地闲逛、漫游' }
         ]
     },
     {
-        name: 'big / huge / enormous',
+        name: 'big / huge / enormous / gigantic',
         description: '均表示"巨大"，但程度递进',
         members: [
             { word: 'big', usage_diff: '最基础的"大"，使用最广泛' },
             { word: 'huge', usage_diff: '比 big 更大，强调体积或规模超出常规' },
-            { word: 'enormous', usage_diff: '极大，强调大到惊人的程度，较正式' }
+            { word: 'enormous', usage_diff: '极大，强调大到惊人的程度，较正式' },
+            { word: 'gigantic', usage_diff: '巨人般的，庞大的，程度最强' }
         ]
     },
     {
-        name: 'angry / furious / mad',
+        name: 'angry / furious / mad / irritated',
         description: '均表示"生气"，但程度和用法不同',
         members: [
             { word: 'angry', usage_diff: '最通用的"生气"，程度可轻可重' },
             { word: 'furious', usage_diff: '暴怒的，程度极强，近乎失控' },
-            { word: 'mad', usage_diff: '口语中指生气，英式也可指发疯' }
+            { word: 'mad', usage_diff: '口语中指生气，英式也可指发疯' },
+            { word: 'irritated', usage_diff: '被激怒的、恼火的，程度较轻' }
         ]
     },
     {
-        name: 'begin / start / commence',
+        name: 'begin / start / commence / initiate',
         description: '均表示"开始"，但正式程度不同',
         members: [
             { word: 'begin', usage_diff: '较通用，与 start 常互换，但偏正式' },
             { word: 'start', usage_diff: '更口语化，强调动作的起始，可指突然开始' },
-            { word: 'commence', usage_diff: '非常正式，常用于法律、仪式等场合' }
+            { word: 'commence', usage_diff: '非常正式，常用于法律、仪式等场合' },
+            { word: 'initiate', usage_diff: '指发起、创始，强调主动开始' }
         ]
     },
     {
-        name: 'help / assist / aid',
+        name: 'help / assist / aid / support',
         description: '均表示"帮助"，但正式程度和侧重点不同',
         members: [
             { word: 'help', usage_diff: '最常用，指一般性的帮助，口语和书面均适用' },
             { word: 'assist', usage_diff: '较正式，指从旁辅助，常为下级帮助上级' },
-            { word: 'aid', usage_diff: '正式用词，常指物质或资金上的援助' }
+            { word: 'aid', usage_diff: '正式用词，常指物质或资金上的援助' },
+            { word: 'support', usage_diff: '强调支持、支撑，可指精神或物质支持' }
         ]
     }
 ];

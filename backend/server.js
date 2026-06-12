@@ -1604,6 +1604,9 @@ app.get('/api/synonym/search', authenticate, (req, res) => {
                     ORDER BY w.id
                 `, [groupRow.group_id], (err3, members) => {
                     if (err3) return res.status(500).json({ error: err3.message });
+                    const targetWordId = targetWord.id;
+                    const otherMembers = members.filter(m => m.id !== targetWordId).slice(0, 3);
+                    const allGroupWordIds = members.map(m => m.id);
                     res.json({
                         found: true,
                         keyword,
@@ -1618,7 +1621,8 @@ app.get('/api/synonym/search', authenticate, (req, res) => {
                             id: groupRow.group_id,
                             name: groupRow.group_name,
                             description: groupRow.group_description,
-                            members: members.map(m => ({
+                            all_group_word_ids: allGroupWordIds,
+                            members: otherMembers.map(m => ({
                                 id: m.id,
                                 word: m.word,
                                 pronunciation: m.pronunciation,
@@ -1677,6 +1681,7 @@ app.get('/api/synonym/search', authenticate, (req, res) => {
 
             db.all(similarSql, params, (err3, similarWords) => {
                 if (err3) return res.status(500).json({ error: err3.message });
+                const allWordIds = [targetWord.id, ...similarWords.map(w => w.id)];
                 res.json({
                     found: true,
                     keyword,
@@ -1688,6 +1693,7 @@ app.get('/api/synonym/search', authenticate, (req, res) => {
                         definition: targetWord.definition
                     },
                     group: null,
+                    all_word_ids: allWordIds,
                     similarWords: similarWords.map(w => ({
                         id: w.id,
                         word: w.word,
