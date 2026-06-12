@@ -5,6 +5,38 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>frontend</title>
+    <script>
+      (function () {
+        try {
+          var STORAGE_KEY = 'vocabulary-app-theme';
+          var stored = localStorage.getItem(STORAGE_KEY);
+          var validThemes = ['light', 'dark', 'system'];
+          var theme = validThemes.indexOf(stored) !== -1 ? stored : 'system';
+
+          var systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches
+            ? 'light'
+            : 'dark';
+          var resolvedTheme = theme === 'system' ? systemTheme : theme;
+
+          var root = document.documentElement;
+          root.classList.remove('light', 'dark');
+          root.classList.add(resolvedTheme);
+          root.style.colorScheme = resolvedTheme;
+
+          var bgColors = {
+            light: '#f1f5f9',
+            dark: '#0f172a',
+          };
+          var textColors = {
+            light: '#0f172a',
+            dark: '#f8fafc',
+          };
+          document.body.style.backgroundColor = bgColors[resolvedTheme];
+          document.body.style.color = textColors[resolvedTheme];
+          document.body.style.transition = 'none';
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
