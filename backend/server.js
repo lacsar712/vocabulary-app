@@ -250,14 +250,17 @@ app.get('/api/recommend', authenticate, (req, res) => {
             const sql = `
                 SELECT w.*,
                        CASE
-                           WHEN sp.id IS NOT NULL THEN 200
+                           WHEN sp.id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM learning_history lh WHERE lh.user_id = ? AND lh.word_id = w.id AND lh.status = 'learned') THEN 200
                            WHEN w.rank BETWEEN ? AND ? THEN 100
                            WHEN w.rank BETWEEN ? AND ? THEN 80
                            WHEN w.rank < ? THEN 60
                            ELSE 40
                        END as level_score,
                        (w.frequency * 10) as frequency_score,
-                       sp.id IS NOT NULL as in_study_plan
+                       CASE
+                           WHEN EXISTS(SELECT 1 FROM learning_history lh WHERE lh.user_id = ? AND lh.word_id = w.id AND lh.status = 'learned') THEN 0
+                           ELSE sp.id IS NOT NULL
+                       END as in_study_plan
                        ${themeScore},
                        GROUP_CONCAT(DISTINCT t_all.name) as theme_names,
                        GROUP_CONCAT(DISTINCT t_all.key) as theme_keys
@@ -281,6 +284,8 @@ app.get('/api/recommend', authenticate, (req, res) => {
             `;
 
             const params = [
+                req.user.id,
+                req.user.id,
                 i, i + 1500,
                 i + 1500, i + 3000,
                 i,
@@ -349,14 +354,17 @@ app.get('/api/recommend/batch', authenticate, (req, res) => {
             const sql = `
                 SELECT w.*,
                        CASE
-                           WHEN sp.id IS NOT NULL THEN 200
+                           WHEN sp.id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM learning_history lh WHERE lh.user_id = ? AND lh.word_id = w.id AND lh.status = 'learned') THEN 200
                            WHEN w.rank BETWEEN ? AND ? THEN 100
                            WHEN w.rank BETWEEN ? AND ? THEN 80
                            WHEN w.rank < ? THEN 60
                            ELSE 40
                        END as level_score,
                        (w.frequency * 10) as frequency_score,
-                       sp.id IS NOT NULL as in_study_plan
+                       CASE
+                           WHEN EXISTS(SELECT 1 FROM learning_history lh WHERE lh.user_id = ? AND lh.word_id = w.id AND lh.status = 'learned') THEN 0
+                           ELSE sp.id IS NOT NULL
+                       END as in_study_plan
                        ${themeScore}
                 FROM words w
                 LEFT JOIN study_plan sp ON sp.word_id = w.id AND sp.user_id = ?
@@ -369,7 +377,7 @@ app.get('/api/recommend/batch', authenticate, (req, res) => {
                 LIMIT ?
             `;
 
-            db.all(sql, [i, i + 1500, i + 1500, i + 3000, i, req.user.id, ...themeParams, req.user.id, limit], (err, words) => {
+            db.all(sql, [req.user.id, req.user.id, i, i + 1500, i + 1500, i + 3000, i, req.user.id, ...themeParams, req.user.id, limit], (err, words) => {
                 if (err) return res.status(500).json({ error: err.message });
                 res.json(words);
             });
@@ -380,10 +388,16 @@ app.get('/api/recommend/batch', authenticate, (req, res) => {
 // Mark word as learned
 app.post('/api/learn/record', authenticate, (req, res) => {
     const { word_id, status } = req.body;
-    db.run("INSERT INTO learning_history (user_id, word_id, status) VALUES (?, ?, ?)", [req.user.id, word_id, status || 'learned'], (err) => {
+    const finalStatus = status || 'learned';
+
+    db.run("INSERT INTO learning_history (user_id, word_id, status) VALUES (?, ?, ?)", [req.user.id, word_id, finalStatus], (err) => {
         if (err) return res.status(500).json({ error: err.message });
 
-        if (status === 'learned') {
+        if (finalStatus === 'learned') {
+            db.run("DELETE FROM study_plan WHERE user_id = ? AND word_id = ?", [req.user.id, word_id], (e2) => {
+                if (e2) console.error('Failed to remove from study plan:', e2);
+            });
+
             db.get("SELECT word FROM words WHERE id = ?", [word_id], (e2, w) => {
                 if (w) {
                     createNotification(req.user.id, 'review_reminder', '新单词已掌握', `你已掌握单词 "${w.word}"，记得及时复习哦！`, `单词 "${w.word}" 已加入你的已掌握列表，建议在24小时内进行复习以巩固记忆。`);
@@ -420,31 +434,47 @@ app.get('/api/stats', authenticate, (req, res) => {
     });
 });
 
-// Study Plan - 获取用户学习计划列表
+// Study Plan - 获取用户学习计划列表（排除已学习的单词）
 app.get('/api/study-plan', authenticate, (req, res) => {
     const sql = `
-        SELECT sp.id as plan_id, sp.added_at, w.*
+        SELECT sp.id as plan_id, sp.added_at, w.*,
+               1 as in_study_plan,
+               0 as is_learned
         FROM study_plan sp
         JOIN words w ON sp.word_id = w.id
         WHERE sp.user_id = ?
+        AND sp.word_id NOT IN (
+            SELECT word_id FROM learning_history
+            WHERE user_id = ? AND status = 'learned'
+        )
         ORDER BY sp.added_at DESC
     `;
-    db.all(sql, [req.user.id], (err, rows) => {
+    db.all(sql, [req.user.id, req.user.id], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ count: rows.length, words: rows });
     });
 });
 
-// Study Plan - 添加单词到学习计划
+// Study Plan - 添加单词到学习计划（已学习的单词不能添加）
 app.post('/api/study-plan', authenticate, (req, res) => {
     const { word_id } = req.body;
     if (!word_id) return res.status(400).json({ error: '缺少 word_id 参数' });
 
-    db.run("INSERT OR IGNORE INTO study_plan (user_id, word_id) VALUES (?, ?)", 
-        [req.user.id, word_id], 
-        function (err) {
+    db.get("SELECT id FROM learning_history WHERE user_id = ? AND word_id = ? AND status = 'learned'",
+        [req.user.id, word_id],
+        (err, learned) => {
             if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, added: this.changes > 0 });
+            if (learned) {
+                return res.status(400).json({ error: '该单词已掌握，无需加入学习计划' });
+            }
+
+            db.run("INSERT OR IGNORE INTO study_plan (user_id, word_id) VALUES (?, ?)", 
+                [req.user.id, word_id], 
+                function (err) {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true, added: this.changes > 0 });
+                }
+            );
         }
     );
 });
@@ -461,11 +491,20 @@ app.delete('/api/study-plan/:wordId', authenticate, (req, res) => {
     );
 });
 
-// Study Plan - 检查单词是否在学习计划中
+// Study Plan - 检查单词是否在学习计划中（已学习的单词返回 false）
 app.get('/api/study-plan/check/:wordId', authenticate, (req, res) => {
     const wordId = req.params.wordId;
-    db.get("SELECT id FROM study_plan WHERE user_id = ? AND word_id = ?", 
-        [req.user.id, wordId], 
+    const sql = `
+        SELECT sp.id 
+        FROM study_plan sp
+        WHERE sp.user_id = ? 
+        AND sp.word_id = ?
+        AND sp.word_id NOT IN (
+            SELECT word_id FROM learning_history
+            WHERE user_id = ? AND status = 'learned'
+        )
+    `;
+    db.get(sql, [req.user.id, wordId, req.user.id], 
         (err, row) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ in_plan: !!row });
@@ -501,7 +540,12 @@ app.get('/api/words', authenticate, (req, res) => {
     const countSql = `SELECT COUNT(*) as total FROM words ${whereClause}`;
     const dataSql = `
         SELECT w.*, 
-               EXISTS(SELECT 1 FROM study_plan sp WHERE sp.user_id = ? AND sp.word_id = w.id) as in_study_plan
+               CASE
+                   WHEN EXISTS(SELECT 1 FROM learning_history lh WHERE lh.user_id = ? AND lh.word_id = w.id AND lh.status = 'learned') 
+                   THEN 0
+                   ELSE EXISTS(SELECT 1 FROM study_plan sp WHERE sp.user_id = ? AND sp.word_id = w.id)
+               END as in_study_plan,
+               EXISTS(SELECT 1 FROM learning_history lh WHERE lh.user_id = ? AND lh.word_id = w.id AND lh.status = 'learned') as is_learned
         FROM words w
         ${whereClause}
         ORDER BY ${sortColumn} ${order}, w.rank ASC
@@ -512,7 +556,7 @@ app.get('/api/words', authenticate, (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         const total = countResult.total;
 
-        const dataParams = [req.user.id, ...params, pageSize, offset];
+        const dataParams = [req.user.id, req.user.id, req.user.id, ...params, pageSize, offset];
         db.all(dataSql, dataParams, (err, words) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({
@@ -1031,7 +1075,12 @@ app.get('/api/themes/words', authenticate, (req, res) => {
 
     const dataSql = `
         SELECT w.*,
-               EXISTS(SELECT 1 FROM study_plan sp WHERE sp.user_id = ? AND sp.word_id = w.id) as in_study_plan,
+               CASE
+                   WHEN EXISTS(SELECT 1 FROM learning_history lh WHERE lh.user_id = ? AND lh.word_id = w.id AND lh.status = 'learned')
+                   THEN 0
+                   ELSE EXISTS(SELECT 1 FROM study_plan sp WHERE sp.user_id = ? AND sp.word_id = w.id)
+               END as in_study_plan,
+               EXISTS(SELECT 1 FROM learning_history lh WHERE lh.user_id = ? AND lh.word_id = w.id AND lh.status = 'learned') as is_learned,
                GROUP_CONCAT(DISTINCT t.name) as theme_names,
                GROUP_CONCAT(DISTINCT t.key) as theme_keys
         FROM words w
@@ -1045,7 +1094,7 @@ app.get('/api/themes/words', authenticate, (req, res) => {
     `;
 
     const countParams = [...themeIds];
-    const dataParams = [req.user.id, ...themeIds, pageSize, offset];
+    const dataParams = [req.user.id, req.user.id, req.user.id, ...themeIds, pageSize, offset];
 
     db.get(countSql, countParams, (err, countResult) => {
         if (err) return res.status(500).json({ error: err.message });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import { Volume2, Star, ChevronDown, ChevronUp, ArrowLeft, Plus, Check } from 'lucide-react';
+import { Volume2, Star, ChevronDown, ChevronUp, ArrowLeft, Plus, Check, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeToggle } from '../components/ThemeToggle';
 
@@ -16,6 +16,7 @@ interface Word {
     frequency: number;
     difficulty_level: number;
     in_study_plan?: boolean;
+    is_learned?: boolean;
 }
 
 interface DifficultyLevel {
@@ -108,6 +109,9 @@ const WordBrowse: React.FC = () => {
     };
 
     const toggleStudyPlan = async (word: Word) => {
+        if (word.is_learned) {
+            return;
+        }
         try {
             if (word.in_study_plan) {
                 await api.delete(`/study-plan/${word.id}`);
@@ -282,6 +286,10 @@ const WordBrowse: React.FC = () => {
                                             exit={{ opacity: 0, y: -20 }}
                                             transition={{ delay: index * 0.05 }}
                                             className={`glass-panel rounded-2xl overflow-hidden cursor-pointer transition-all ${
+                                                word.is_learned
+                                                    ? 'opacity-80 border-l-4 border-l-emerald-500'
+                                                    : ''
+                                            } ${
                                                 expandedCardId === word.id
                                                     ? 'ring-2 ring-primary/50'
                                                     : 'hover:bg-surface/80'
@@ -317,20 +325,27 @@ const WordBrowse: React.FC = () => {
                                                         <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${difficultyBgColors[word.difficulty_level]}`}>
                                                             {levels.find(l => l.level === word.difficulty_level)?.name}
                                                         </div>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                toggleStudyPlan(word);
-                                                            }}
-                                                            className={`p-2 rounded-full transition-all ${
-                                                                word.in_study_plan
-                                                                    ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                                                                    : 'bg-surface-hover text-text-muted hover:bg-surface-hover hover:text-text-primary'
-                                                            }`}
-                                                            title={word.in_study_plan ? '从学习计划移除' : '加入学习计划'}
-                                                        >
-                                                            {word.in_study_plan ? <Star size={18} fill="currentColor" /> : <Plus size={18} />}
-                                                        </button>
+                                                        {word.is_learned ? (
+                                                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                                                <CheckCircle2 size={16} />
+                                                                <span className="text-xs font-semibold">已掌握</span>
+                                                            </div>
+                                                        ) : (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    toggleStudyPlan(word);
+                                                                }}
+                                                                className={`p-2 rounded-full transition-all ${
+                                                                    word.in_study_plan
+                                                                        ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                                                                        : 'bg-surface-hover text-text-muted hover:bg-surface-hover hover:text-text-primary'
+                                                                }`}
+                                                                title={word.in_study_plan ? '从学习计划移除' : '加入学习计划'}
+                                                            >
+                                                                {word.in_study_plan ? <Star size={18} fill="currentColor" /> : <Plus size={18} />}
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
 
