@@ -334,6 +334,7 @@ app.get('/api/recommend', authenticate, (req, res) => {
                         if (fallback) {
                             fallback.theme_names = fallback.theme_names ? fallback.theme_names.split(',') : [];
                             fallback.theme_keys = fallback.theme_keys ? fallback.theme_keys.split(',') : [];
+                            fallback.matched_theme_pref = false;
                             return res.json(fallback);
                         }
                         return res.json({ message: "暂无新单词. 您已掌握所有词汇!" });
@@ -342,6 +343,7 @@ app.get('/api/recommend', authenticate, (req, res) => {
                 }
                 word.theme_names = word.theme_names ? word.theme_names.split(',') : [];
                 word.theme_keys = word.theme_keys ? word.theme_keys.split(',') : [];
+                word.matched_theme_pref = !hasThemePref || word.theme_score > 0;
                 res.json(word);
             });
         });

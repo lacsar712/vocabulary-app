@@ -53,6 +53,7 @@ const ThemeLearning: React.FC = () => {
     const [themes, setThemes] = useState<Theme[]>([]);
     const [selectedThemes, setSelectedThemes] = useState<number[]>([]);
     const [preferences, setPreferences] = useState<number[]>([]);
+    const [tempPreferences, setTempPreferences] = useState<number[]>([]);
     const [words, setWords] = useState<ThemeWord[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [loading, setLoading] = useState(false);
@@ -60,6 +61,16 @@ const ThemeLearning: React.FC = () => {
     const [expandedCardId, setExpandedCardId] = useState<number | null>(null);
     const [showPrefModal, setShowPrefModal] = useState(false);
     const observerRef = useRef<HTMLDivElement>(null);
+
+    const handleOpenPrefModal = () => {
+        setTempPreferences([...preferences]);
+        setShowPrefModal(true);
+    };
+
+    const handleClosePrefModal = () => {
+        setTempPreferences([]);
+        setShowPrefModal(false);
+    };
 
     const fetchThemes = useCallback(async () => {
         try {
@@ -178,16 +189,18 @@ const ThemeLearning: React.FC = () => {
 
     const savePreferences = async () => {
         try {
-            await api.post('/themes/preferences', { themeIds: preferences });
-            setShowPrefModal(false);
+            await api.post('/themes/preferences', { themeIds: tempPreferences });
+            setPreferences(tempPreferences);
+            handleClosePrefModal();
             fetchThemes();
+            fetchPreferences();
         } catch (e) {
             console.error(e);
         }
     };
 
     const togglePreference = (themeId: number) => {
-        setPreferences(prev => {
+        setTempPreferences(prev => {
             if (prev.includes(themeId)) {
                 return prev.filter(id => id !== themeId);
             }
@@ -237,7 +250,7 @@ const ThemeLearning: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <ThemeToggle />
                         <button
-                            onClick={() => setShowPrefModal(true)}
+                            onClick={handleOpenPrefModal}
                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 text-text-secondary hover:from-primary/30 hover:to-secondary/30 transition cursor-pointer"
                         >
                             <Bookmark size={16} />
@@ -524,11 +537,11 @@ const ThemeLearning: React.FC = () => {
             </div>
 
             {showPrefModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowPrefModal(false)}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={handleClosePrefModal}>
                     <div className="glass-panel bg-page p-6 rounded-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold text-text-primary">设定学习方向</h2>
-                            <button onClick={() => setShowPrefModal(false)} className="text-text-muted hover:text-text-primary">
+                            <button onClick={handleClosePrefModal} className="text-text-muted hover:text-text-primary">
                                 <X size={20} />
                             </button>
                         </div>
@@ -537,7 +550,7 @@ const ThemeLearning: React.FC = () => {
                         </p>
                         <div className="grid grid-cols-2 gap-3 mb-6">
                             {themes.map(theme => {
-                                const isSelected = preferences.includes(theme.id);
+                                const isSelected = tempPreferences.includes(theme.id);
                                 const style = getThemeStyle(theme.key);
                                 return (
                                     <button
@@ -564,7 +577,7 @@ const ThemeLearning: React.FC = () => {
                                 );
                             })}
                         </div>
-                        {preferences.length === 2 && (
+                        {tempPreferences.length === 2 && (
                             <p className="text-accent text-xs mb-4">
                                 ✨ 已选择2个主题，将形成交叉学习方向
                             </p>
@@ -572,7 +585,7 @@ const ThemeLearning: React.FC = () => {
                         <div className="flex gap-3">
                             <button
                                 onClick={() => {
-                                    setPreferences([]);
+                                    setTempPreferences([]);
                                 }}
                                 className="btn-secondary flex-1 py-3"
                             >

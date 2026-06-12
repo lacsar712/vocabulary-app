@@ -22,6 +22,7 @@ interface RecommendedWord {
     theme_names?: string[];
     theme_keys?: string[];
     in_study_plan?: boolean;
+    matched_theme_pref?: boolean;
 }
 
 const themeColorMap: Record<string, { bg: string; border: string; text: string; badge: string }> = {
@@ -215,19 +216,12 @@ const Dashboard: React.FC = () => {
                                 )}
                             </div>
 
-                            {word.theme_keys && word.theme_keys.length > 0 && (
-                                <div className="absolute top-4 left-4 flex flex-wrap gap-1.5 max-w-[60%]">
-                                    {word.theme_keys.map((key, idx) => {
-                                        const s = getThemeStyle(key);
-                                        return (
-                                            <span
-                                                key={key}
-                                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${s.badge}`}
-                                            >
-                                                {word.theme_names?.[idx]}
-                                            </span>
-                                        );
-                                    })}
+                            {themePrefs.length > 0 && word.matched_theme_pref === false && (
+                                <div className="absolute top-4 left-4 right-20">
+                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-medium">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                                        当前主题暂无可学新词，已切换为全局推荐
+                                    </div>
                                 </div>
                             )}
 
@@ -240,6 +234,21 @@ const Dashboard: React.FC = () => {
                                     <Volume2 size={24} />
                                     <span className="text-lg font-mono">{word.pronunciation}</span>
                                 </div>
+                                {word.theme_keys && word.theme_keys.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5 mt-4">
+                                        {word.theme_keys.map((key, idx) => {
+                                            const s = getThemeStyle(key);
+                                            return (
+                                                <span
+                                                    key={key}
+                                                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${s.badge}`}
+                                                >
+                                                    {word.theme_names?.[idx]}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-8 mb-12">
