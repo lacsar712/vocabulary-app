@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -24,7 +24,11 @@ import { ThemeToggle } from '../components/ThemeToggle';
 const TOTAL_STEPS = 5;
 
 const Onboarding: React.FC = () => {
-    const [currentStep, setCurrentStep] = useState(1);
+    const [searchParams] = useSearchParams();
+    const stepParam = searchParams.get('step');
+    const initialStep = stepParam ? Math.min(Math.max(parseInt(stepParam, 10), 1), TOTAL_STEPS) : 1;
+
+    const [currentStep, setCurrentStep] = useState(initialStep);
     const [demoState, setDemoState] = useState<'idle' | 'learned' | 'skipped'>('idle');
     const [spotlightTarget, setSpotlightTarget] = useState<
         'learnBtn' | 'skipBtn' | 'wordCard' | null
@@ -38,17 +42,23 @@ const Onboarding: React.FC = () => {
     const navigate = useNavigate();
     const { completeOnboarding } = useAuth();
 
+    useEffect(() => {
+        if (currentStep === 4) {
+            setSpotlightTarget('wordCard');
+            const t1 = setTimeout(() => setSpotlightTarget('learnBtn'), 1500);
+            const t2 = setTimeout(() => setSpotlightTarget('skipBtn'), 3000);
+            const t3 = setTimeout(() => setSpotlightTarget(null), 4500);
+            return () => {
+                clearTimeout(t1);
+                clearTimeout(t2);
+                clearTimeout(t3);
+            };
+        }
+    }, [currentStep]);
+
     const handleNext = async () => {
         if (currentStep < TOTAL_STEPS) {
             setCurrentStep(prev => prev + 1);
-            if (currentStep === 3) {
-                setSpotlightTarget('wordCard');
-                setTimeout(() => setSpotlightTarget('learnBtn'), 1500);
-                setTimeout(() => setSpotlightTarget('skipBtn'), 3000);
-                setTimeout(() => setSpotlightTarget(null), 4500);
-            } else {
-                setSpotlightTarget(null);
-            }
         } else {
             await completeOnboarding();
             navigate('/');
@@ -68,7 +78,7 @@ const Onboarding: React.FC = () => {
     };
 
     const handleGoToTest = () => {
-        navigate('/test?from=onboarding');
+        navigate(`/test?from=onboarding&step=${currentStep}`);
     };
 
     const handleSkipTest = () => {

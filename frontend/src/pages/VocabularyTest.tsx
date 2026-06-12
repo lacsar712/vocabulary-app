@@ -45,6 +45,7 @@ const VocabularyTest: React.FC = () => {
 
     const searchParams = new URLSearchParams(window.location.search);
     const fromOnboarding = searchParams.get('from') === 'onboarding';
+    const onboardingStep = searchParams.get('step') ? parseInt(searchParams.get('step')!, 10) : null;
 
     useEffect(() => {
         api.get('/test/words').then(res => {
@@ -168,7 +169,14 @@ const VocabularyTest: React.FC = () => {
 
                     <p className="text-text-muted mb-8">准备好扩展您的词库了吗？</p>
                     <button
-                        onClick={() => navigate(fromOnboarding ? '/onboarding' : '/')}
+                        onClick={() => {
+                            if (fromOnboarding) {
+                                const nextStep = onboardingStep ? onboardingStep + 1 : 4;
+                                navigate(`/onboarding?step=${nextStep}`);
+                            } else {
+                                navigate('/');
+                            }
+                        }}
                         className="btn-primary w-full flex items-center justify-center gap-2"
                     >
                         {fromOnboarding ? '继续引导' : '开始学习'} <ArrowRight size={20} />
