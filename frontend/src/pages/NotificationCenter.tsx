@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
 import api from '../api';
-import { Bell, Clock, Target, TrendingUp, Award, Megaphone, Trash2, CheckCheck, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { Bell, Clock, Target, TrendingUp, Award, Megaphone, Trash2, CheckCheck, ChevronDown, ChevronUp, ArrowLeft, Bookmark, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeToggle } from '../components/ThemeToggle';
 
@@ -27,6 +27,8 @@ interface Pagination {
 const NOTIFICATION_TYPES = [
     { key: '', label: '全部', icon: Bell, color: 'text-text-secondary', bgColor: 'bg-slate-500/20', borderColor: 'border-slate-500/30' },
     { key: 'review_reminder', label: '复习提醒', icon: Clock, color: 'text-blue-400', bgColor: 'bg-blue-500/20', borderColor: 'border-blue-500/30' },
+    { key: 'notebook_add', label: '加入生词本', icon: Bookmark, color: 'text-cyan-400', bgColor: 'bg-cyan-500/20', borderColor: 'border-cyan-500/30' },
+    { key: 'mastered_from_notebook', label: '生词已掌握', icon: CheckCircle, color: 'text-indigo-400', bgColor: 'bg-indigo-500/20', borderColor: 'border-indigo-500/30' },
     { key: 'goal_achievement', label: '目标达成', icon: Target, color: 'text-emerald-400', bgColor: 'bg-emerald-500/20', borderColor: 'border-emerald-500/30' },
     { key: 'rank_change', label: '排名变动', icon: TrendingUp, color: 'text-amber-400', bgColor: 'bg-amber-500/20', borderColor: 'border-amber-500/30' },
     { key: 'achievement_unlock', label: '成就解锁', icon: Award, color: 'text-purple-400', bgColor: 'bg-purple-500/20', borderColor: 'border-purple-500/30' },
@@ -69,7 +71,7 @@ const NotificationCenter: React.FC = () => {
             } else {
                 setLoading(true);
             }
-            const params: any = { page, pageSize: 10 };
+            const params: { page: number; pageSize: number; type?: string } = { page, pageSize: 10 };
             if (type) params.type = type;
             const res = await api.get('/notifications', { params });
             if (append) {
@@ -88,7 +90,7 @@ const NotificationCenter: React.FC = () => {
 
     useEffect(() => {
         fetchNotifications(1, activeType, false);
-    }, [activeType]);
+    }, [activeType, fetchNotifications]);
 
     const handleTypeChange = (type: string) => {
         setActiveType(type);
