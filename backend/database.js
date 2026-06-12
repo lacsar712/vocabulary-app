@@ -68,7 +68,49 @@ const wordList = [
     { word: "iconoclast", pronunciation: "/naɪˈkɒnəklæst/", pos: "n.", definition: "反传统者；打破偶像者", example: "Rogers, an iconoclast in architecture, is sometimes described as shameless.", rank: 8000, frequency: 1, difficulty_level: 6 },
     { word: "palimpsest", pronunciation: "/ˈpælɪmpsest/", pos: "n.", definition: "多层次结构；具有多重意义的事物", example: "The city is a palimpsest of different cultures and eras.", rank: 9000, frequency: 1, difficulty_level: 6 },
     { word: "sesquipedalian", pronunciation: "/ˌseskwɪpɪˈdeɪliən/", pos: "adj.", definition: "（词语）冗长的；好用长词的", example: "His sesquipedalian prose style made the article difficult to read.", rank: 9500, frequency: 1, difficulty_level: 6 },
-    { word: "defenestration", pronunciation: "/diːˌfenɪˈstreɪʃən/", pos: "n.", definition: "将人或物从窗户扔出", example: "The defenestration of Prague was a pivotal event in European history.", rank: 9200, frequency: 1, difficulty_level: 6 }
+    { word: "defenestration", pronunciation: "/diːˌfenɪˈstreɪʃən/", pos: "n.", definition: "将人或物从窗户扔出", example: "The defenestration of Prague was a pivotal event in European history.", rank: 9200, frequency: 1, difficulty_level: 6 },
+
+    { word: "big", pronunciation: "/bɪɡ/", pos: "adj.", definition: "大的", example: "There was a big hole in the road.", rank: 110, frequency: 10, difficulty_level: 1 },
+    { word: "large", pronunciation: "/lɑːdʒ/", pos: "adj.", definition: "大的；大量的", example: "A large number of people attended the meeting.", rank: 300, frequency: 10, difficulty_level: 1 },
+    { word: "great", pronunciation: "/ɡreɪt/", pos: "adj.", definition: "伟大的；极大的", example: "It was a great pleasure to meet you.", rank: 280, frequency: 10, difficulty_level: 1 },
+    { word: "small", pronunciation: "/smɔːl/", pos: "adj.", definition: "小的", example: "They live in a small village.", rank: 140, frequency: 10, difficulty_level: 1 },
+    { word: "little", pronunciation: "/ˈlɪtl/", pos: "adj.", definition: "小的；少的", example: "She has a little dog.", rank: 160, frequency: 10, difficulty_level: 1 },
+    { word: "tiny", pronunciation: "/ˈtaɪni/", pos: "adj.", definition: "极小的；微小的", example: "The tiny kitten fit in the palm of my hand.", rank: 2100, frequency: 7, difficulty_level: 3 },
+    { word: "beautiful", pronunciation: "/ˈbjuːtɪfl/", pos: "adj.", definition: "美丽的", example: "What a beautiful view!", rank: 600, frequency: 9, difficulty_level: 2 },
+    { word: "pretty", pronunciation: "/ˈprɪti/", pos: "adj.", definition: "漂亮的；相当", example: "She looked very pretty in that dress.", rank: 700, frequency: 9, difficulty_level: 2 },
+    { word: "handsome", pronunciation: "/ˈhænsəm/", pos: "adj.", definition: "英俊的；大方的", example: "He was a handsome young man.", rank: 1600, frequency: 7, difficulty_level: 2 },
+    { word: "happy", pronunciation: "/ˈhæpi/", pos: "adj.", definition: "快乐的；幸福的", example: "I'm so happy to see you!", rank: 190, frequency: 10, difficulty_level: 1 },
+    { word: "glad", pronunciation: "/ɡlæd/", pos: "adj.", definition: "高兴的；乐意的", example: "I'm glad you could come.", rank: 900, frequency: 8, difficulty_level: 2 },
+    { word: "cheerful", pronunciation: "/ˈtʃɪəfl/", pos: "adj.", definition: "开朗的；愉快的", example: "She is always cheerful and smiling.", rank: 2800, frequency: 6, difficulty_level: 3 },
+    { word: "sad", pronunciation: "/sæd/", pos: "adj.", definition: "悲伤的", example: "She felt sad about leaving her friends.", rank: 210, frequency: 10, difficulty_level: 1 },
+    { word: "unhappy", pronunciation: "/ʌnˈhæpi/", pos: "adj.", definition: "不快乐的；不满意的", example: "He was unhappy with the results.", rank: 1700, frequency: 7, difficulty_level: 2 },
+    { word: "sorrowful", pronunciation: "/ˈsɒrəʊfl/", pos: "adj.", definition: "悲伤的；哀痛的", example: "She gave a sorrowful sigh.", rank: 5500, frequency: 3, difficulty_level: 4 },
+    { word: "fast", pronunciation: "/fɑːst/", pos: "adj.", definition: "快的；迅速的", example: "The car was going too fast.", rank: 230, frequency: 10, difficulty_level: 1 },
+    { word: "quick", pronunciation: "/kwɪk/", pos: "adj.", definition: "快的；敏捷的", example: "She gave a quick answer.", rank: 350, frequency: 10, difficulty_level: 1 },
+    { word: "rapid", pronunciation: "/ˈræpɪd/", pos: "adj.", definition: "迅速的；急剧的", example: "The country has seen rapid economic growth.", rank: 2000, frequency: 7, difficulty_level: 3 },
+    { word: "smart", pronunciation: "/smɑːt/", pos: "adj.", definition: "聪明的；时髦的", example: "That was a smart decision.", rank: 800, frequency: 9, difficulty_level: 2 },
+    { word: "clever", pronunciation: "/ˈklevər/", pos: "adj.", definition: "聪明的；灵巧的", example: "She is a clever student.", rank: 1100, frequency: 8, difficulty_level: 2 },
+    { word: "wise", pronunciation: "/waɪz/", pos: "adj.", definition: "明智的；有智慧的", example: "That was a wise choice.", rank: 1400, frequency: 8, difficulty_level: 2 },
+    { word: "look", pronunciation: "/lʊk/", pos: "v.", definition: "看；注视", example: "Look at this picture.", rank: 105, frequency: 10, difficulty_level: 1 },
+    { word: "see", pronunciation: "/siː/", pos: "v.", definition: "看见；理解", example: "I can see the mountains from here.", rank: 102, frequency: 10, difficulty_level: 1 },
+    { word: "watch", pronunciation: "/wɒtʃ/", pos: "v.", definition: "观看；注视", example: "We watched the football game on TV.", rank: 135, frequency: 10, difficulty_level: 1 },
+    { word: "say", pronunciation: "/seɪ/", pos: "v.", definition: "说；讲", example: "What did she say?", rank: 101, frequency: 10, difficulty_level: 1 },
+    { word: "tell", pronunciation: "/tel/", pos: "v.", definition: "告诉；告知", example: "Please tell me your name.", rank: 103, frequency: 10, difficulty_level: 1 },
+    { word: "speak", pronunciation: "/spiːk/", pos: "v.", definition: "说话；演讲", example: "She speaks three languages.", rank: 115, frequency: 10, difficulty_level: 1 },
+    { word: "walk", pronunciation: "/wɔːk/", pos: "v.", definition: "步行；散步", example: "We walked to the park.", rank: 125, frequency: 10, difficulty_level: 1 },
+    { word: "march", pronunciation: "/mɑːtʃ/", pos: "v.", definition: "行军；齐步前进", example: "The soldiers marched through the streets.", rank: 2200, frequency: 6, difficulty_level: 3 },
+    { word: "stroll", pronunciation: "/strəʊl/", pos: "v.", definition: "散步；溜达", example: "We strolled along the beach at sunset.", rank: 3500, frequency: 5, difficulty_level: 3 },
+    { word: "huge", pronunciation: "/hjuːdʒ/", pos: "adj.", definition: "巨大的；庞大的", example: "The elephant was absolutely huge.", rank: 1500, frequency: 8, difficulty_level: 2 },
+    { word: "enormous", pronunciation: "/ɪˈnɔːməs/", pos: "adj.", definition: "巨大的；极大的", example: "The project required an enormous amount of money.", rank: 3400, frequency: 5, difficulty_level: 3 },
+    { word: "angry", pronunciation: "/ˈæŋɡri/", pos: "adj.", definition: "生气的；愤怒的", example: "She was angry at the delay.", rank: 400, frequency: 9, difficulty_level: 2 },
+    { word: "furious", pronunciation: "/ˈfjʊəriəs/", pos: "adj.", definition: "暴怒的；狂怒的", example: "He was furious at the accusation.", rank: 3800, frequency: 5, difficulty_level: 3 },
+    { word: "mad", pronunciation: "/mæd/", pos: "adj.", definition: "疯狂的；生气的", example: "Are you mad at me?", rank: 600, frequency: 9, difficulty_level: 2 },
+    { word: "begin", pronunciation: "/bɪˈɡɪn/", pos: "v.", definition: "开始", example: "The concert begins at 8 pm.", rank: 350, frequency: 10, difficulty_level: 1 },
+    { word: "start", pronunciation: "/stɑːt/", pos: "v.", definition: "开始；出发", example: "What time does the meeting start?", rank: 250, frequency: 10, difficulty_level: 1 },
+    { word: "commence", pronunciation: "/kəˈmens/", pos: "v.", definition: "开始；着手（正式用语）", example: "The ceremony will commence shortly.", rank: 4800, frequency: 4, difficulty_level: 4 },
+    { word: "help", pronunciation: "/help/", pos: "v.", definition: "帮助；帮忙", example: "Can you help me with this?", rank: 108, frequency: 10, difficulty_level: 1 },
+    { word: "assist", pronunciation: "/əˈsɪst/", pos: "v.", definition: "协助；帮助", example: "The nurse assisted the doctor during the operation.", rank: 2500, frequency: 6, difficulty_level: 3 },
+    { word: "aid", pronunciation: "/eɪd/", pos: "v.", definition: "援助；资助", example: "The government aided the victims of the flood.", rank: 2700, frequency: 6, difficulty_level: 3 }
 ];
 
 
@@ -161,6 +203,148 @@ const wordThemeMap = {
         'warmup', 'win', 'workout', 'worldcup'
     ]
 };
+
+const SYNONYM_GROUPS = [
+    {
+        name: 'big / large / great',
+        description: '均表示"大"，但侧重不同',
+        members: [
+            { word: 'big', usage_diff: '最常用，指体积、面积、重量等大，偏口语化' },
+            { word: 'large', usage_diff: '较正式，指体积、数量、容量等大，范围更广' },
+            { word: 'great', usage_diff: '强调程度、重要性或伟大，也常表示"极好的"' }
+        ]
+    },
+    {
+        name: 'small / little / tiny',
+        description: '均表示"小"，但语气和侧重点不同',
+        members: [
+            { word: 'small', usage_diff: '客观描述尺寸、数量等小，中性词' },
+            { word: 'little', usage_diff: '带感情色彩，常含可爱、怜悯之意' },
+            { word: 'tiny', usage_diff: '强调极小、微小的程度' }
+        ]
+    },
+    {
+        name: 'beautiful / pretty / handsome',
+        description: '均表示"好看"，但适用对象和语气不同',
+        members: [
+            { word: 'beautiful', usage_diff: '形容人或物极为美丽，程度最深，尤指女性' },
+            { word: 'pretty', usage_diff: '娇小可爱之美，程度较轻，多用于女性或小孩' },
+            { word: 'handsome', usage_diff: '形容男性英俊，或指体面、大方的美' }
+        ]
+    },
+    {
+        name: 'happy / glad / cheerful',
+        description: '均表示"高兴"，但用法和语境有差异',
+        members: [
+            { word: 'happy', usage_diff: '最通用，表示幸福、满足的高兴' },
+            { word: 'glad', usage_diff: '多用于对某事感到高兴，常搭配 about 或不定式' },
+            { word: 'cheerful', usage_diff: '强调开朗、乐观的性格或情绪状态' }
+        ]
+    },
+    {
+        name: 'sad / unhappy / sorrowful',
+        description: '均表示"悲伤"，但程度和用法不同',
+        members: [
+            { word: 'sad', usage_diff: '最通用，泛指各种程度的悲伤' },
+            { word: 'unhappy', usage_diff: '侧重不快乐、不满意，程度较轻' },
+            { word: 'sorrowful', usage_diff: '文学用词，表示深切的悲伤和哀痛' }
+        ]
+    },
+    {
+        name: 'fast / quick / rapid',
+        description: '均表示"快"，但侧重点和搭配不同',
+        members: [
+            { word: 'fast', usage_diff: '侧重速度高，可作形容词和副词' },
+            { word: 'quick', usage_diff: '侧重时间短、反应迅速，更强调短暂' },
+            { word: 'rapid', usage_diff: '较正式，指变化或增长速度快' }
+        ]
+    },
+    {
+        name: 'smart / clever / wise',
+        description: '均表示"聪明"，但含义侧重不同',
+        members: [
+            { word: 'smart', usage_diff: '强调机敏、精明，美式也指整洁时髦' },
+            { word: 'clever', usage_diff: '强调学习和理解能力强，善于做某事' },
+            { word: 'wise', usage_diff: '强调有智慧、判断力强，经验丰富' }
+        ]
+    },
+    {
+        name: 'look / see / watch',
+        description: '均与"看"有关，但动作方式不同',
+        members: [
+            { word: 'look', usage_diff: '强调看的动作，通常搭配 at' },
+            { word: 'see', usage_diff: '强调看的结果，自然地看到' },
+            { word: 'watch', usage_diff: '强调专注地、持续地观察' }
+        ]
+    },
+    {
+        name: 'say / tell / speak',
+        description: '均与"说"有关，但用法和搭配不同',
+        members: [
+            { word: 'say', usage_diff: '强调说话的内容，后接引语或 that 从句' },
+            { word: 'tell', usage_diff: '强调告知某人某事，搭配双宾语' },
+            { word: 'speak', usage_diff: '强调说话的行为或能力，不强调内容' }
+        ]
+    },
+    {
+        name: 'walk / march / stroll',
+        description: '均表示"走"，但方式和语气不同',
+        members: [
+            { word: 'walk', usage_diff: '最通用的"步行"，无特殊感情色彩' },
+            { word: 'march', usage_diff: '指齐步前进，带有严肃或坚定的意味' },
+            { word: 'stroll', usage_diff: '指悠闲散步，节奏缓慢放松' }
+        ]
+    },
+    {
+        name: 'big / huge / enormous',
+        description: '均表示"巨大"，但程度递进',
+        members: [
+            { word: 'big', usage_diff: '最基础的"大"，使用最广泛' },
+            { word: 'huge', usage_diff: '比 big 更大，强调体积或规模超出常规' },
+            { word: 'enormous', usage_diff: '极大，强调大到惊人的程度，较正式' }
+        ]
+    },
+    {
+        name: 'angry / furious / mad',
+        description: '均表示"生气"，但程度和用法不同',
+        members: [
+            { word: 'angry', usage_diff: '最通用的"生气"，程度可轻可重' },
+            { word: 'furious', usage_diff: '暴怒的，程度极强，近乎失控' },
+            { word: 'mad', usage_diff: '口语中指生气，英式也可指发疯' }
+        ]
+    },
+    {
+        name: 'begin / start / commence',
+        description: '均表示"开始"，但正式程度不同',
+        members: [
+            { word: 'begin', usage_diff: '较通用，与 start 常互换，但偏正式' },
+            { word: 'start', usage_diff: '更口语化，强调动作的起始，可指突然开始' },
+            { word: 'commence', usage_diff: '非常正式，常用于法律、仪式等场合' }
+        ]
+    },
+    {
+        name: 'help / assist / aid',
+        description: '均表示"帮助"，但正式程度和侧重点不同',
+        members: [
+            { word: 'help', usage_diff: '最常用，指一般性的帮助，口语和书面均适用' },
+            { word: 'assist', usage_diff: '较正式，指从旁辅助，常为下级帮助上级' },
+            { word: 'aid', usage_diff: '正式用词，常指物质或资金上的援助' }
+        ]
+    }
+];
+
+const CONFUSABLE_PAIRS = [
+    { word1: 'affect', word2: 'effect', tip: 'affect 动词"影响"；effect 名词"效果"' },
+    { word1: 'accept', word2: 'except', tip: 'accept"接受"；except"除了"' },
+    { word1: 'adapt', word2: 'adopt', tip: 'adapt"适应"；adopt"采纳/收养"' },
+    { word1: 'complement', word2: 'compliment', tip: 'complement"补充"；compliment"赞美"' },
+    { word1: 'principal', word2: 'principle', tip: 'principal"主要的/校长"；principle"原则"' },
+    { word1: 'stationary', word2: 'stationery', tip: 'stationary"静止的"；stationery"文具"' },
+    { word1: 'desert', word2: 'dessert', tip: 'desert"沙漠/抛弃"；dessert"甜点"' },
+    { word1: 'personal', word2: 'personnel', tip: 'personal"个人的"；personnel"人事/员工"' },
+    { word1: 'economic', word2: 'economical', tip: 'economic"经济的"；economical"节约的"' },
+    { word1: 'historic', word2: 'historical', tip: 'historic"有历史意义的"；historical"历史上的"' }
+];
 
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -361,6 +545,43 @@ db.serialize(() => {
         FOREIGN KEY(user_id) REFERENCES users(id)
     )`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS synonym_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS synonym_group_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id INTEGER NOT NULL,
+        word_id INTEGER NOT NULL,
+        usage_diff TEXT,
+        FOREIGN KEY(group_id) REFERENCES synonym_groups(id),
+        FOREIGN KEY(word_id) REFERENCES words(id),
+        UNIQUE(group_id, word_id)
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS confusable_pairs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        word1 TEXT NOT NULL,
+        word2 TEXT NOT NULL,
+        tip TEXT,
+        UNIQUE(word1, word2)
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS synonym_search_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        keyword TEXT NOT NULL,
+        searched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )`);
+
+    db.run(`CREATE INDEX IF NOT EXISTS idx_synonym_search_history_user ON synonym_search_history(user_id, searched_at DESC)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_synonym_group_members_group ON synonym_group_members(group_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_synonym_group_members_word ON synonym_group_members(word_id)`);
+
     setTimeout(() => {
         const stmt = db.prepare(`
             INSERT INTO words (word, pronunciation, pos, definition, example, rank, frequency, difficulty_level)
@@ -407,6 +628,45 @@ db.serialize(() => {
             });
             wtStmt.finalize();
             console.log('Word-theme associations seeded successfully');
+
+            setTimeout(() => {
+                const sgStmt = db.prepare(`
+                    INSERT INTO synonym_groups (name, description)
+                    VALUES (?, ?)
+                `);
+
+                const sgmStmt = db.prepare(`
+                    INSERT OR IGNORE INTO synonym_group_members (group_id, word_id, usage_diff)
+                    SELECT ?, w.id, ?
+                    FROM words w
+                    WHERE w.word = ?
+                `);
+
+                const cpStmt = db.prepare(`
+                    INSERT OR IGNORE INTO confusable_pairs (word1, word2, tip)
+                    VALUES (?, ?, ?)
+                `);
+
+                SYNONYM_GROUPS.forEach((group, gi) => {
+                    sgStmt.run(group.name, group.description, function(err) {
+                        if (err) { console.error('Error inserting synonym group:', err); return; }
+                        const groupId = this.lastID;
+                        group.members.forEach(m => {
+                            sgmStmt.run(groupId, m.usage_diff, m.word, (err2) => {
+                                if (err2) console.error('Error inserting synonym group member:', err2);
+                            });
+                        });
+                    });
+                });
+                sgStmt.finalize();
+                sgmStmt.finalize();
+
+                CONFUSABLE_PAIRS.forEach(pair => {
+                    cpStmt.run(pair.word1, pair.word2, pair.tip);
+                });
+                cpStmt.finalize();
+                console.log('Synonym groups and confusable pairs seeded successfully');
+            }, 300);
         }, 300);
     }, 500);
 });
@@ -421,4 +681,4 @@ const createNotification = (userId, type, title, summary, detail) => {
     );
 };
 
-module.exports = { db, THEMES, createNotification };
+module.exports = { db, THEMES, CONFUSABLE_PAIRS, createNotification };

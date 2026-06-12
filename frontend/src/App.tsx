@@ -13,6 +13,7 @@ import ThemeLearning from './pages/ThemeLearning';
 import NotificationCenter from './pages/NotificationCenter';
 import Onboarding from './pages/Onboarding';
 import VocabularyNotebook from './pages/VocabularyNotebook';
+import SynonymCompare from './pages/SynonymCompare';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { isAuthenticated } = useAuth();
@@ -71,6 +72,11 @@ function App() {
               <Route path="/vocabulary-notebook" element={
                 <ProtectedRoute>
                   <VocabularyNotebook />
+                </ProtectedRoute>
+              } />
+              <Route path="/synonym-compare" element={
+                <ProtectedRoute>
+                  <SynonymCompare />
                 </ProtectedRoute>
               } />
               <Route path="/" element={

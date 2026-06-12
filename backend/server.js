@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { db, THEMES, createNotification } = require('./database');
+const { db, THEMES, CONFUSABLE_PAIRS, createNotification } = require('./database');
 const app = express();
 const PORT = 3000;
 const SECRET_KEY = "supersecretkey_vocabulary_1209"; // In prod, use .env
@@ -1460,6 +1460,261 @@ app.post('/api/vocabulary-notebook/:wordId/master', authenticate, (req, res) => 
             });
         });
         stmt2.finalize();
+    });
+});
+
+
+// ========== Synonym Compare (近义词对比) API ==========
+
+app.get('/api/synonym/search', authenticate, (req, res) => {
+    const keyword = (req.query.keyword || '').trim().toLowerCase();
+    if (!keyword) return res.status(400).json({ error: '请输入搜索关键词' });
+
+    db.get("SELECT * FROM words WHERE LOWER(word) = ?", [keyword], (err, targetWord) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!targetWord) return res.json({ found: false, keyword });
+
+        db.get(`
+            SELECT sg.id as group_id, sg.name as group_name, sg.description as group_description
+            FROM synonym_group_members sgm
+            JOIN synonym_groups sg ON sg.id = sgm.group_id
+            WHERE sgm.word_id = ?
+            LIMIT 1
+        `, [targetWord.id], (err2, groupRow) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+
+            if (groupRow) {
+                db.all(`
+                    SELECT sgm.usage_diff, w.*
+                    FROM synonym_group_members sgm
+                    JOIN words w ON w.id = sgm.word_id
+                    WHERE sgm.group_id = ?
+                    ORDER BY w.id
+                `, [groupRow.group_id], (err3, members) => {
+                    if (err3) return res.status(500).json({ error: err3.message });
+                    res.json({
+                        found: true,
+                        keyword,
+                        targetWord: {
+                            id: targetWord.id,
+                            word: targetWord.word,
+                            pronunciation: targetWord.pronunciation,
+                            pos: targetWord.pos,
+                            definition: targetWord.definition
+                        },
+                        group: {
+                            id: groupRow.group_id,
+                            name: groupRow.group_name,
+                            description: groupRow.group_description,
+                            members: members.map(m => ({
+                                id: m.id,
+                                word: m.word,
+                                pronunciation: m.pronunciation,
+                                pos: m.pos,
+                                definition: m.definition,
+                                example: m.example,
+                                rank: m.rank,
+                                frequency: m.frequency,
+                                difficulty_level: m.difficulty_level,
+                                usage_diff: m.usage_diff
+                            }))
+                        }
+                    });
+                });
+                return;
+            }
+
+            const defKeywords = targetWord.definition.split(/[，,、；;]\s*/).filter(d => d.length > 0);
+            let whereClause = 'WHERE w.id != ? AND (';
+            const params = [targetWord.id];
+            const conditions = [];
+
+            if (targetWord.pos) {
+                conditions.push('w.pos = ?');
+                params.push(targetWord.pos);
+            }
+
+            defKeywords.forEach(dk => {
+                if (dk.length >= 2) {
+                    conditions.push('w.definition LIKE ?');
+                    params.push(`%${dk}%`);
+                }
+            });
+
+            if (conditions.length > 0) {
+                whereClause += conditions.join(' OR ') + ')';
+            } else {
+                whereClause += '1=0)';
+            }
+
+            whereClause += ` AND ABS(w.rank - ?) < 2000`;
+            params.push(targetWord.rank);
+
+            const similarSql = `
+                SELECT w.*,
+                    CASE
+                        WHEN w.pos = ? THEN 20 ELSE 0
+                    END as pos_score,
+                    (SELECT COUNT(*) FROM synonym_group_members sgm2 WHERE sgm2.word_id = w.id) as in_group
+                FROM words w
+                ${whereClause}
+                ORDER BY pos_score DESC, ABS(w.rank - ?) ASC
+                LIMIT 3
+            `;
+            params.push(targetWord.pos, targetWord.rank);
+
+            db.all(similarSql, params, (err3, similarWords) => {
+                if (err3) return res.status(500).json({ error: err3.message });
+                res.json({
+                    found: true,
+                    keyword,
+                    targetWord: {
+                        id: targetWord.id,
+                        word: targetWord.word,
+                        pronunciation: targetWord.pronunciation,
+                        pos: targetWord.pos,
+                        definition: targetWord.definition
+                    },
+                    group: null,
+                    similarWords: similarWords.map(w => ({
+                        id: w.id,
+                        word: w.word,
+                        pronunciation: w.pronunciation,
+                        pos: w.pos,
+                        definition: w.definition,
+                        example: w.example,
+                        rank: w.rank,
+                        frequency: w.frequency,
+                        difficulty_level: w.difficulty_level,
+                        usage_diff: null
+                    }))
+                });
+            });
+        });
+    });
+});
+
+app.get('/api/synonym/groups', authenticate, (req, res) => {
+    const sql = `
+        SELECT sg.id, sg.name, sg.description,
+               COUNT(sgm.id) as member_count
+        FROM synonym_groups sg
+        LEFT JOIN synonym_group_members sgm ON sgm.group_id = sg.id
+        GROUP BY sg.id
+        ORDER BY sg.id
+    `;
+
+    db.all(sql, [], (err, groups) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ groups });
+    });
+});
+
+app.get('/api/synonym/groups/:groupId', authenticate, (req, res) => {
+    const groupId = parseInt(req.params.groupId);
+
+    db.get("SELECT * FROM synonym_groups WHERE id = ?", [groupId], (err, group) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!group) return res.status(404).json({ error: '词组未找到' });
+
+        db.all(`
+            SELECT sgm.usage_diff, w.*
+            FROM synonym_group_members sgm
+            JOIN words w ON w.id = sgm.word_id
+            WHERE sgm.group_id = ?
+            ORDER BY w.rank
+        `, [groupId], (err2, members) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({
+                id: group.id,
+                name: group.name,
+                description: group.description,
+                members: members.map(m => ({
+                    id: m.id,
+                    word: m.word,
+                    pronunciation: m.pronunciation,
+                    pos: m.pos,
+                    definition: m.definition,
+                    example: m.example,
+                    rank: m.rank,
+                    frequency: m.frequency,
+                    difficulty_level: m.difficulty_level,
+                    usage_diff: m.usage_diff
+                }))
+            });
+        });
+    });
+});
+
+app.get('/api/synonym/confusable-pairs', authenticate, (req, res) => {
+    const limit = parseInt(req.query.limit) || 10;
+    db.all("SELECT * FROM confusable_pairs ORDER BY RANDOM() LIMIT ?", [limit], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ pairs: rows });
+    });
+});
+
+app.get('/api/synonym/search-history', authenticate, (req, res) => {
+    db.all(`
+        SELECT DISTINCT keyword, MAX(searched_at) as last_searched
+        FROM synonym_search_history
+        WHERE user_id = ?
+        GROUP BY keyword
+        ORDER BY last_searched DESC
+        LIMIT 5
+    `, [req.user.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ history: rows.map(r => r.keyword) });
+    });
+});
+
+app.post('/api/synonym/search-history', authenticate, (req, res) => {
+    const { keyword } = req.body;
+    if (!keyword) return res.status(400).json({ error: '缺少关键词' });
+
+    db.run(
+        "INSERT INTO synonym_search_history (user_id, keyword) VALUES (?, ?)",
+        [req.user.id, keyword.trim().toLowerCase()],
+        (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        }
+    );
+});
+
+app.post('/api/synonym/add-group-to-plan', authenticate, (req, res) => {
+    const { word_ids } = req.body;
+    if (!Array.isArray(word_ids) || word_ids.length === 0) {
+        return res.status(400).json({ error: '请选择要加入的单词' });
+    }
+
+    const stmt = db.prepare("INSERT OR IGNORE INTO study_plan (user_id, word_id) VALUES (?, ?)");
+    let addedCount = 0;
+
+    word_ids.forEach(wid => {
+        stmt.run(req.user.id, wid, function(err) {
+            if (!err && this.changes > 0) addedCount++;
+        });
+    });
+    stmt.finalize(() => {
+        res.json({ success: true, added_count: addedCount });
+    });
+});
+
+app.get('/api/synonym/hot-groups', authenticate, (req, res) => {
+    const limit = parseInt(req.query.limit) || 5;
+
+    db.all(`
+        SELECT sg.id, sg.name, sg.description,
+               COUNT(sgm.id) as member_count
+        FROM synonym_groups sg
+        LEFT JOIN synonym_group_members sgm ON sgm.group_id = sg.id
+        GROUP BY sg.id
+        ORDER BY RANDOM()
+        LIMIT ?
+    `, [limit], (err, groups) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ groups });
     });
 });
 

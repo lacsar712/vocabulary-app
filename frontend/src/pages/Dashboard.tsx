@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import api from '../api';
-import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy, Bookmark, Bell, Settings, NotebookPen, Plus, Check, Headphones } from 'lucide-react';
+import { CheckCircle, BarChart2, Book, Volume2, LogOut, RefreshCw, Gamepad2, Trophy, Bookmark, Bell, Settings, NotebookPen, Plus, Check, Headphones, Shuffle } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 import SettingsPanel from '../components/SettingsPanel';
 import { motion } from 'framer-motion';
@@ -372,6 +372,13 @@ const Dashboard: React.FC = () => {
                             >
                                 <Headphones size={16} className="text-teal-400" />
                                 <span className="flex-1">听力辨词训练</span>
+                            </button>
+                            <button
+                                onClick={() => navigate('/synonym-compare')}
+                                className="w-full text-left p-3 rounded-lg bg-gradient-to-r from-pink-500/10 to-rose-500/10 hover:from-pink-500/20 hover:to-rose-500/20 transition text-text-secondary hover:text-text-primary flex items-center gap-3 border border-pink-500/30"
+                            >
+                                <Shuffle size={16} className="text-pink-400" />
+                                <span className="flex-1">近义词对比</span>
                             </button>
                             <button
                                 onClick={() => navigate('/leaderboard')}
