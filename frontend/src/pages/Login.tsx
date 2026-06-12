@@ -17,10 +17,16 @@ const Login: React.FC = () => {
         try {
             const res = await api.post('/login', { username, password });
             login(res.data.token, res.data.user);
-            if (res.data.user.vocab_size === 0) {
-                navigate('/test'); // Redirect to test first
+
+            const user = res.data.user;
+            const needsOnboarding = !user.onboarding_completed && user.vocab_size === 0;
+
+            if (needsOnboarding) {
+                navigate('/onboarding');
+            } else if (user.vocab_size === 0) {
+                navigate('/test');
             } else {
-                navigate('/'); // Dashboard
+                navigate('/');
             }
         } catch (err: any) {
             setError(err.response?.data?.error || 'Login failed');

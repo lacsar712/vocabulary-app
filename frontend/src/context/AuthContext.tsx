@@ -5,6 +5,7 @@ interface User {
     id: number;
     username: string;
     vocab_size: number;
+    onboarding_completed?: number;
 }
 
 interface AuthContextType {
@@ -13,6 +14,9 @@ interface AuthContextType {
     logout: () => void;
     isAuthenticated: boolean;
     refreshUser: () => Promise<void>;
+    completeOnboarding: () => Promise<void>;
+    resetOnboarding: () => Promise<void>;
+    checkNeedsOnboarding: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,10 +57,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const completeOnboarding = async () => {
+        try {
+            await api.post('/onboarding/complete');
+            setUser(prev => prev ? { ...prev, onboarding_completed: 1 } : prev);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const resetOnboarding = async () => {
+        try {
+            await api.post('/onboarding/reset');
+            setUser(prev => prev ? { ...prev, onboarding_completed: 0 } : prev);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const checkNeedsOnboarding = async (): Promise<boolean> => {
+        try {
+            const res = await api.get('/onboarding/needs');
+            return res.data.needs_onboarding;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    };
+
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-background text-primary">Loading...</div>;
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, refreshUser }}>
+        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, refreshUser, completeOnboarding, resetOnboarding, checkNeedsOnboarding }}>
             {children}
         </AuthContext.Provider>
     );

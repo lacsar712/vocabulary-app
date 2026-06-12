@@ -10,6 +10,7 @@ import SpellingChallenge from './pages/SpellingChallenge';
 import Leaderboard from './pages/Leaderboard';
 import ThemeLearning from './pages/ThemeLearning';
 import NotificationCenter from './pages/NotificationCenter';
+import Onboarding from './pages/Onboarding';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { isAuthenticated } = useAuth();
@@ -53,6 +54,11 @@ function App() {
               <Route path="/themes" element={
                 <ProtectedRoute>
                   <ThemeLearning />
+                </ProtectedRoute>
+              } />
+              <Route path="/onboarding" element={
+                <ProtectedRoute>
+                  <Onboarding />
                 </ProtectedRoute>
               } />
               <Route path="/" element={

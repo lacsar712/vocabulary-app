@@ -28,7 +28,7 @@ app.post('/api/register', (req, res) => {
     const hash = bcrypt.hashSync(password, 10);
     db.run("INSERT INTO users (username, password_hash) VALUES (?, ?)", [username, hash], function (err) {
         if (err) return res.status(400).json({ error: "用户名已存在" });
-        res.json({ id: this.lastID, username, vocab_size: 0 });
+        res.json({ id: this.lastID, username, vocab_size: 0, onboarding_completed: 0 });
     });
 });
 
@@ -37,7 +37,15 @@ app.post('/api/login', (req, res) => {
     db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
         if (!user || applyPasswordCheck(password, user)) return res.status(401).json({ error: "无效的用户名或密码" });
         const token = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, { expiresIn: '24h' });
-        res.json({ token, user: { id: user.id, username: user.username, vocab_size: user.vocab_size } });
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                vocab_size: user.vocab_size,
+                onboarding_completed: user.onboarding_completed || 0
+            }
+        });
     });
 });
 
@@ -47,8 +55,36 @@ function applyPasswordCheck(password, user) {
 
 // User Profile
 app.get('/api/me', authenticate, (req, res) => {
-    db.get("SELECT id, username, vocab_size, created_at FROM users WHERE id = ?", [req.user.id], (err, row) => {
+    db.get("SELECT id, username, vocab_size, onboarding_completed, created_at FROM users WHERE id = ?", [req.user.id], (err, row) => {
         res.json(row);
+    });
+});
+
+// Check if user needs onboarding (no vocab test AND no learning records)
+app.get('/api/onboarding/needs', authenticate, (req, res) => {
+    db.get("SELECT vocab_size, onboarding_completed FROM users WHERE id = ?", [req.user.id], (err, user) => {
+        if (err) return res.status(500).json({ error: err.message });
+        db.get("SELECT COUNT(*) as cnt FROM learning_history WHERE user_id = ?", [req.user.id], (err2, stats) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            const needsOnboarding = !user.onboarding_completed && user.vocab_size === 0 && stats.cnt === 0;
+            res.json({ needs_onboarding: needsOnboarding, onboarding_completed: !!user.onboarding_completed });
+        });
+    });
+});
+
+// Mark onboarding as completed
+app.post('/api/onboarding/complete', authenticate, (req, res) => {
+    db.run("UPDATE users SET onboarding_completed = 1 WHERE id = ?", [req.user.id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, onboarding_completed: true });
+    });
+});
+
+// Reset onboarding status (for re-watching from settings)
+app.post('/api/onboarding/reset', authenticate, (req, res) => {
+    db.run("UPDATE users SET onboarding_completed = 0 WHERE id = ?", [req.user.id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, onboarding_completed: false });
     });
 });
 

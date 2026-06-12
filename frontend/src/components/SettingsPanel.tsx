@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { X, Settings, Palette, User, Shield, Bell, ChevronRight } from 'lucide-react';
+import { X, Settings, Palette, User, Shield, Bell, ChevronRight, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeSelector } from './ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface SettingsPanelProps {
     isOpen: boolean;
@@ -26,8 +27,15 @@ const sections: SettingSection[] = [
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
     const [activeSection, setActiveSection] = useState<string>('appearance');
-    const { user } = useAuth();
+    const { user, resetOnboarding } = useAuth();
     const { themeLabel, resetToSystem } = useTheme();
+    const navigate = useNavigate();
+
+    const handleReplayOnboarding = async () => {
+        await resetOnboarding();
+        onClose();
+        navigate('/onboarding');
+    };
 
     const renderSectionContent = () => {
         switch (activeSection) {
@@ -130,7 +138,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose })
                                 </div>
                             </div>
                             <div className="h-px bg-border-default" />
-                            <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="grid grid-cols-2 gap-4 text-sm mb-5">
                                 <div>
                                     <div className="text-text-muted mb-1">用户ID</div>
                                     <div className="text-text-primary font-mono">#{user?.id}</div>
@@ -138,6 +146,27 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose })
                                 <div>
                                     <div className="text-text-muted mb-1">当前主题</div>
                                     <div className="text-text-primary">{themeLabel}</div>
+                                </div>
+                            </div>
+                            <div className="h-px bg-border-default" />
+                            <div className="pt-5">
+                                <h4 className="text-sm font-semibold text-text-primary mb-3">更多操作</h4>
+                                <div className="space-y-2">
+                                    <button
+                                        onClick={handleReplayOnboarding}
+                                        className="w-full flex items-center justify-between p-3 rounded-xl bg-surface/50 border border-border-default hover:bg-surface-hover hover:border-border-strong transition-all cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center">
+                                                <BookOpen size={18} className="text-primary" />
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="text-sm font-medium text-text-primary">重新观看新手引导</div>
+                                                <div className="text-xs text-text-muted">回顾产品功能与操作指引</div>
+                                            </div>
+                                        </div>
+                                        <ChevronRight size={16} className="text-text-muted" />
+                                    </button>
                                 </div>
                             </div>
                         </div>

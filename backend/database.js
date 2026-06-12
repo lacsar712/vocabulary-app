@@ -168,8 +168,23 @@ db.serialize(() => {
         username TEXT UNIQUE,
         password_hash TEXT,
         vocab_size INTEGER DEFAULT 0,
+        onboarding_completed INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+
+    db.all("PRAGMA table_info(users)", (err, columns) => {
+        if (err) {
+            console.error('Error checking users table info:', err);
+            return;
+        }
+        const columnNames = columns.map(c => c.name);
+        if (!columnNames.includes('onboarding_completed')) {
+            db.run("ALTER TABLE users ADD COLUMN onboarding_completed INTEGER DEFAULT 0", (err) => {
+                if (err) console.error('Error adding onboarding_completed column:', err);
+                else console.log('Added onboarding_completed column to users table');
+            });
+        }
+    });
 
     db.run(`CREATE TABLE IF NOT EXISTS words (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
